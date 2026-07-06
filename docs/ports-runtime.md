@@ -18,6 +18,8 @@ or require an explicit native-client escape hatch.
 - `SearchIndexPort` — keyword/BM25-style search and index writes.
 - `ObjectStorePort` — object/blob put/get/list/delete.
 - `KeyValuePort` — cache/key-value get/set/delete/exists with TTL support.
+- `LockPort` — short-lived distributed locks with owner-token validation.
+- `StreamPort` — minimal publish/read/ack stream contract.
 - `DocumentStorePort` — simple document DB get/upsert/find/delete.
 - `SqlResourcePort` — bridge contract to SQL resources; SQL lifecycle remains in
   `muscles-sql` or a project adapter.
@@ -113,6 +115,61 @@ Diagnostics redact `url`, password and auth fields. `data.doctor` checks client
 ping and index availability, while `data.resources.list` does not create a
 client. Native OpenSearch access is available only when `native_client: true` is
 set and should remain an advanced project escape hatch.
+
+## Redis Key-Value, Lock and Stream Adapter
+
+`type: redis` is the built-in optional adapter for `KeyValuePort`, `LockPort`
+and `StreamPort`:
+
+```python
+cache = runtime.require_port("cache.default", KeyValuePort)
+cache.set("cursor", b"page-2", ttl_seconds=60)
+
+lock = runtime.require_port("cache.default", LockPort)
+handle = lock.acquire_lock("sync", ttl_seconds=30)
+if handle is not None:
+    lock.release_lock(handle)
+```
+
+Config:
+
+```yaml
+data:
+  resources:
+    cache.default:
+      type: redis
+      url: ${REDIS_URL}
+      namespace: app
+      timeout: 3
+      stream_group: workers
+```
+
+The adapter owns lazy client creation, key namespacing, TTL key-value
+operations, lock acquire/release, simple stream publish/read/ack operations,
+health checks and safe diagnostics. It does not own business cache schemas, job
+frameworks, consumer group lifecycle, distributed transaction guarantees or
+project serialization policy.
+
+Namespacing is deterministic:
+
+- `cache.get("cursor")` -> `app:cursor`;
+- `lock.acquire_lock("job", ...)` -> `app:lock:job`;
+- `stream.publish("events", ...)` -> `app:stream:events`.
+
+Lock acquisition uses atomic Redis `SET` with `NX` and `PX`. Release uses a Lua
+compare-and-delete script, so a caller can only release the lock if the stored
+token matches its `LockHandle`. Releasing an expired or replaced lock is
+idempotent and returns an empty `WriteResult`.
+
+Stream support stays intentionally narrow. `publish()` maps to `XADD`,
+`read()` maps to `XREAD`, and `ack()` maps to `XACK` with `stream_group`
+(default: `default`). Projects own consumer group creation, retry/dead-letter
+policy and message schemas.
+
+Diagnostics redact `url`. `data.doctor` performs `PING`, while
+`data.resources.list` does not create a client. Native Redis access is
+available only when `native_client: true` is set and should remain an advanced
+project escape hatch.
 
 ## Qdrant Vector Adapter
 
@@ -259,6 +316,9 @@ index/delete operations, explicit native access or `data.doctor`.
 
 For OpenSearch, the real client is also lazy. It is created only by search,
 index/delete operations, explicit native access or `data.doctor`.
+
+For Redis, the real client is also lazy. It is created only by key-value, lock,
+stream operations, explicit native access or `data.doctor`.
 
 For Qdrant, the real client is also lazy. It is created only by vector
 operations, explicit native access or `data.doctor`.

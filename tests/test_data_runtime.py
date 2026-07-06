@@ -19,6 +19,7 @@ from muscles_data.adapters.memory import (
 from muscles_data.adapters.elasticsearch import ElasticsearchSearchFactory, elasticsearch_filter_from_mapping
 from muscles_data.adapters.opensearch import OpenSearchSearchFactory, opensearch_filter_from_mapping
 from muscles_data.adapters.qdrant import QdrantVectorFactory, qdrant_filter_from_mapping
+from muscles_data.adapters.redis import RedisDataFactory
 from muscles_data.adapters.sqlalchemy import SqlAlchemySqlResourceFactory
 from muscles_data.catalog import DataAdapterCatalog
 from muscles_data.config import DataConfig
@@ -34,18 +35,23 @@ from muscles_data.errors import (
     QdrantConnectionError,
     QdrantDimensionError,
     QdrantFilterError,
+    RedisClientMissingError,
+    RedisConfigError,
+    RedisConnectionError,
     SqlAlchemyClientMissingError,
     SqlAlchemyConnectionError,
     SqlConnectionMissingError,
     SqlRegistryMissingError,
 )
-from muscles_data.models import DataCapability, DataResourceConfig
+from muscles_data.models import DataCapability, DataResourceConfig, LockHandle
 from muscles_data.ports import (
     DocumentStorePort,
     KeyValuePort,
+    LockPort,
     ObjectStorePort,
     SearchIndexPort,
     SqlResourcePort,
+    StreamPort,
     VectorSearchPort,
 )
 from muscles_data.runtime import DataRuntime
@@ -326,6 +332,90 @@ class FakeOpenSearchClient:
         self.closed = True
 
 
+class FakeRedisClient:
+    def __init__(self, *, fail_ping: bool = False) -> None:
+        self.fail_ping = fail_ping
+        self.values: dict[str, Any] = {}
+        self.sets: list[dict[str, Any]] = []
+        self.deletes: list[tuple[str, ...]] = []
+        self.exists_calls: list[tuple[str, ...]] = []
+        self.eval_calls: list[dict[str, Any]] = []
+        self.streams: dict[str, list[tuple[str, dict[str, Any]]]] = {}
+        self.xacks: list[dict[str, Any]] = []
+        self.pings = 0
+        self.closed = False
+
+    def set(self, name: str, value, **kwargs):
+        self.sets.append({"name": name, "value": value, **kwargs})
+        if kwargs.get("nx") and name in self.values:
+            return False
+        self.values[name] = value
+        return True
+
+    def get(self, name: str):
+        return self.values.get(name)
+
+    def delete(self, *names: str) -> int:
+        self.deletes.append(tuple(names))
+        deleted = 0
+        for name in names:
+            deleted += 1 if self.values.pop(name, None) is not None else 0
+        return deleted
+
+    def exists(self, *names: str) -> int:
+        self.exists_calls.append(tuple(names))
+        return sum(1 for name in names if name in self.values)
+
+    def eval(self, script: str, numkeys: int, *keys_and_args):
+        self.eval_calls.append({"script": script, "numkeys": numkeys, "items": keys_and_args})
+        key = str(keys_and_args[0])
+        expected_token = keys_and_args[1]
+        if self.values.get(key) != expected_token:
+            return 0
+        self.values.pop(key, None)
+        return 1
+
+    def xadd(self, name: str, fields: dict[str, Any]):
+        stream = self.streams.setdefault(name, [])
+        message_id = f"{len(stream) + 1}-0"
+        stream.append((message_id, dict(fields)))
+        return message_id
+
+    def xread(self, streams: dict[str, str], count: int | None = None, block: int | None = None):
+        del block
+        result = []
+        for name, cursor in streams.items():
+            messages = [
+                (message_id, fields)
+                for message_id, fields in self.streams.get(name, [])
+                if _redis_message_after(message_id, cursor)
+            ]
+            result.append((name, messages[:count]))
+        return result
+
+    def xack(self, name: str, groupname: str, *ids: str) -> int:
+        self.xacks.append({"name": name, "groupname": groupname, "ids": ids})
+        known_ids = {message_id for message_id, _fields in self.streams.get(name, [])}
+        return sum(1 for message_id in ids if message_id in known_ids)
+
+    def ping(self) -> bool:
+        self.pings += 1
+        if self.fail_ping:
+            raise TimeoutError("redis password=redis-secret timed out")
+        return True
+
+    def close(self) -> None:
+        self.closed = True
+
+
+def _redis_message_after(message_id: str, cursor: str) -> bool:
+    if cursor in {"0", "0-0"}:
+        return True
+    if cursor == "$":
+        return False
+    return message_id > cursor
+
+
 def _config() -> dict[str, Any]:
     return {
         "data": {
@@ -415,6 +505,24 @@ def _opensearch_config(url: str = "https://opensearch.example") -> dict[str, Any
     }
 
 
+def _redis_config(url: str = "redis://:redis-secret@localhost:6379/0") -> dict[str, Any]:
+    return {
+        "data": {
+            "resources": {
+                "cache.redis": {
+                    "type": "redis",
+                    "url": url,
+                    "namespace": "app",
+                    "decode_responses": False,
+                    "timeout": 1.5,
+                    "stream_group": "workers",
+                    "native_client": True,
+                }
+            }
+        }
+    }
+
+
 def test_config_parser_accepts_resources_and_redacts_secrets():
     config = DataConfig.from_raw(_config())
 
@@ -483,6 +591,13 @@ def test_opensearch_resource_config_requires_url_and_index():
 
     with pytest.raises(ValueError, match="requires index"):
         DataConfig.from_raw({"data": {"resources": {"search.open": {"type": "opensearch", "url": "http://localhost:9200"}}}})
+
+
+def test_redis_resource_config_requires_url():
+    assert DataConfig.from_raw(_redis_config()).resources["cache.redis"].type == "redis"
+
+    with pytest.raises(ValueError, match="requires url"):
+        DataConfig.from_raw({"data": {"resources": {"cache.redis": {"type": "redis"}}}})
 
 
 def test_runtime_lazy_initialization_and_capability_mismatch():
@@ -1031,6 +1146,123 @@ def test_opensearch_inspect_doctor_close_and_safe_failures():
         bad_runtime.require_port("search.open", SearchIndexPort).search_text("x")
 
 
+def test_redis_data_port_is_registered_lazy_and_maps_kv_lock_stream_operations():
+    client = FakeRedisClient()
+    runtime = DataRuntime(
+        config=DataConfig.from_raw(_redis_config()),
+        catalog=DataAdapterCatalog.with_defaults(redis_client_factory=lambda _config: client),
+    )
+
+    listed = runtime.list_resources()
+    redis_resource = next(item for item in listed if item["name"] == "cache.redis")
+    inspected_before = runtime.inspect_resource("cache.redis")
+
+    assert redis_resource["type"] == "redis"
+    assert {"key_value", "cache", "lock", "stream"} <= set(redis_resource["capabilities"])
+    assert "native_client" not in redis_resource["capabilities"]
+    assert redis_resource["initialized"] is False
+    assert inspected_before["initialized"] is False
+    assert inspected_before["options"]["url"] == "***"
+    assert DataAdapterCatalog.with_defaults().has_factory(RedisDataFactory.resource_type)
+
+    cache = runtime.require_port("cache.redis", KeyValuePort)
+    write = cache.set("cursor", b"cursor-1", ttl_seconds=2.5)
+
+    assert write.written == 1
+    assert client.sets[0]["name"] == "app:cursor"
+    assert client.sets[0]["value"] == b"cursor-1"
+    assert client.sets[0]["px"] == 2500
+    assert cache.get("cursor") == b"cursor-1"
+    assert cache.exists("cursor") is True
+    assert cache.delete("cursor").deleted == 1
+    assert client.deletes[-1] == ("app:cursor",)
+
+    lock = runtime.require_port("cache.redis", LockPort)
+    handle = lock.acquire_lock("daily-job", ttl_seconds=5)
+
+    assert isinstance(handle, LockHandle)
+    assert client.sets[-1]["name"] == "app:lock:daily-job"
+    assert client.sets[-1]["nx"] is True
+    assert client.sets[-1]["px"] == 5000
+    assert lock.acquire_lock("daily-job", ttl_seconds=5) is None
+    assert lock.release_lock(LockHandle(name="daily-job", token="wrong", expires_at=0)).deleted == 0
+    released = lock.release_lock(handle)
+    assert released.deleted == 1
+    assert "redis.call('get'" in client.eval_calls[-1]["script"]
+
+    stream = runtime.require_port("cache.redis", StreamPort)
+    published = stream.publish("events", {"kind": "created", "count": 1})
+    read = stream.read("events", limit=10)
+    acked = stream.ack("events", "1-0")
+
+    assert published.written == 1
+    assert read.cursor == "1-0"
+    assert read.messages == [
+        {"stream": "events", "id": "1-0", "fields": {"kind": "created", "count": 1}}
+    ]
+    assert acked.matched == 1
+    assert client.xacks[-1] == {"name": "app:stream:events", "groupname": "workers", "ids": ("1-0",)}
+
+    native = runtime.require_resource("cache.redis", DataCapability.NATIVE_CLIENT).native_client()
+    assert native is client
+    assert client.pings == 0
+
+
+def test_redis_inspect_doctor_close_and_safe_failures():
+    client = FakeRedisClient()
+    runtime = DataRuntime(
+        config=DataConfig.from_raw(_redis_config()),
+        catalog=DataAdapterCatalog.with_defaults(redis_client_factory=lambda _config: client),
+    )
+
+    inspect_before = runtime.inspect_resource("cache.redis")
+    assert inspect_before["initialized"] is False
+    assert inspect_before["options"]["url"] == "***"
+
+    doctor = runtime.doctor()
+    redis_checks = [check for check in doctor["checks"] if check["resource"] == "cache.redis"]
+
+    assert redis_checks[0]["status"] == "ok"
+    assert client.pings == 1
+    assert "redis-secret" not in repr(doctor)
+    assert runtime.close()["status"] == "ok"
+    assert client.closed is True
+
+    missing_client_runtime = DataRuntime(
+        config=DataConfig.from_raw(_redis_config()),
+        catalog=DataAdapterCatalog.with_defaults(redis_client_factory=lambda _config: None),
+    )
+    with pytest.raises(RedisClientMissingError):
+        missing_client_runtime.require_port("cache.redis", KeyValuePort).get("cursor")
+
+    failing_runtime = DataRuntime(
+        config=DataConfig.from_raw(_redis_config()),
+        catalog=DataAdapterCatalog.with_defaults(redis_client_factory=lambda _config: FakeRedisClient(fail_ping=True)),
+    )
+    failing_doctor = failing_runtime.doctor()
+    assert failing_doctor["status"] == "failed"
+    assert [check for check in failing_doctor["checks"] if check["resource"] == "cache.redis"][0]["status"] == "failed"
+    assert "redis-secret" not in repr(failing_doctor)
+
+    bad_client = FakeRedisClient()
+    bad_client.get = lambda _name: (_ for _ in ()).throw(RuntimeError("redis://:redis-secret@localhost unavailable"))
+    bad_runtime = DataRuntime(
+        config=DataConfig.from_raw(_redis_config()),
+        catalog=DataAdapterCatalog.with_defaults(redis_client_factory=lambda _config: bad_client),
+    )
+    with pytest.raises(RedisConnectionError):
+        bad_runtime.require_port("cache.redis", KeyValuePort).get("cursor")
+
+    unsupported_runtime = DataRuntime(
+        config=DataConfig.from_raw(
+            {"data": {"resources": {"cache.redis": {"type": "redis", "url": "redis://localhost", "unsafe": True}}}}
+        ),
+        catalog=DataAdapterCatalog.with_defaults(redis_client_factory=lambda _config: FakeRedisClient()),
+    )
+    with pytest.raises(RedisConfigError, match="Unsupported Redis resource options"):
+        unsupported_runtime.require_port("cache.redis", KeyValuePort).get("cursor")
+
+
 def test_qdrant_vector_port_is_registered_lazy_and_maps_operations():
     client = FakeQdrantClient()
     catalog = DataAdapterCatalog.with_defaults(
@@ -1175,12 +1407,14 @@ def test_data_source_does_not_import_vendor_or_ai_packages():
     core_text = "\n".join(
         path.read_text(encoding="utf-8")
         for path in source_root.rglob("*.py")
-        if path.name not in {"elasticsearch.py", "opensearch.py", "qdrant.py", "sqlalchemy.py"}
+        if path.name not in {"elasticsearch.py", "opensearch.py", "qdrant.py", "redis.py", "sqlalchemy.py"}
     )
 
-    for marker in ("muscles_ai", "muscles_otel", "redis", "pymongo", "boto3"):
+    for marker in ("muscles_ai", "muscles_otel", "pymongo", "boto3"):
         assert marker not in core_text
     assert "opensearchpy" not in core_text
+    assert "import redis" not in core_text
+    assert "from redis" not in core_text
     assert "import elasticsearch" not in core_text
     assert "from elasticsearch" not in core_text
     assert "import sqlalchemy" not in core_text
@@ -1191,6 +1425,8 @@ def test_data_source_does_not_import_vendor_or_ai_packages():
     assert "from opensearchpy" not in opensearch_source.read_text(encoding="utf-8")
     qdrant_source = source_root / "adapters" / "qdrant.py"
     assert "from qdrant_client" not in qdrant_source.read_text(encoding="utf-8")
+    redis_source = source_root / "adapters" / "redis.py"
+    assert "from redis" not in redis_source.read_text(encoding="utf-8")
     sqlalchemy_source = source_root / "adapters" / "sqlalchemy.py"
     assert "from sqlalchemy" not in sqlalchemy_source.read_text(encoding="utf-8")
     assert "muscles_sql" not in sqlalchemy_source.read_text(encoding="utf-8")
@@ -1203,5 +1439,7 @@ def test_package_public_exports():
     assert md.DataCapability
     assert md.VectorSearchPort
     assert md.ObjectStorePort
+    assert md.LockPort
+    assert md.StreamPort
     assert md.SqlResourcePort
     assert DataPackage.namespace == "data"
