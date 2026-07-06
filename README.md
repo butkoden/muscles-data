@@ -81,6 +81,13 @@ data:
     cache.default:
       type: memory_kv
 
+    cache.redis:
+      type: redis
+      url: ${REDIS_URL}
+      namespace: app
+      timeout: 3
+      stream_group: workers
+
     objects.docs:
       type: memory_object
 
@@ -105,6 +112,8 @@ SQLAlchemy clients at package import time. Elasticsearch, Qdrant and SQLAlchemy
 support live in optional adapter modules and import their vendor clients only
 when a matching resource is used. OpenSearch support is separate from
 Elasticsearch and uses its own optional `opensearch-py` dependency.
+Redis support is a separate optional adapter around `redis-py` for key-value,
+cache, lock and simple stream use cases.
 
 ### Qdrant Vector Resources
 
@@ -246,6 +255,66 @@ inside `type: opensearch`.
 The adapter does not own index lifecycle automation, analyzers, mappings,
 document parsing, embeddings, RAG logic or reranking.
 
+### Redis Key-Value, Lock and Stream Resources
+
+`type: redis` implements `KeyValuePort`, `LockPort` and `StreamPort` over one
+Redis connection:
+
+```yaml
+data:
+  resources:
+    cache.default:
+      type: redis
+      url: ${REDIS_URL}
+      namespace: app
+      timeout: 3
+      stream_group: workers
+```
+
+Install the optional client in projects that use the real adapter:
+
+```bash
+python -m pip install 'muscles-data[redis]'
+```
+
+Use it through typed ports:
+
+```python
+from muscles_data.ports import KeyValuePort, LockPort, StreamPort
+
+cache = runtime.require_port("cache.default", KeyValuePort)
+cache.set("cursor", b"page-2", ttl_seconds=60)
+
+lock = runtime.require_port("cache.default", LockPort)
+handle = lock.acquire_lock("resume-sync", ttl_seconds=30)
+if handle is not None:
+    try:
+        ...
+    finally:
+        lock.release_lock(handle)
+
+stream = runtime.require_port("cache.default", StreamPort)
+stream.publish("events", {"kind": "resume.updated"})
+```
+
+Capabilities are `key_value`, `cache`, `lock`, `stream` and `healthcheck`; add
+`native_client: true` only for advanced project-specific Redis operations.
+Every key is namespaced when `namespace` is set:
+
+- `cache.set("cursor", ...)` -> `app:cursor`;
+- `lock.acquire_lock("job", ...)` -> `app:lock:job`;
+- `stream.publish("events", ...)` -> `app:stream:events`.
+
+`set()` passes TTL as milliseconds to Redis. Lock acquisition uses atomic
+`SET ... NX PX ...`; release uses a Lua compare-and-delete script, so a caller
+cannot delete a lock owned by another token. Stream support intentionally stays
+small: `publish()` uses `XADD`, `read()` uses `XREAD`, and `ack()` uses `XACK`
+with `stream_group` (default: `default`). Projects still own consumer group
+creation, retry policy, job semantics and message schema.
+
+The adapter does not own business cache schema, distributed transactions,
+serialization policy beyond bytes/Redis values, or a job framework.
+
 ### SQL Resources
 
 `type: sql` is a bridge to named connections owned by `muscles-sql`:
@@ -364,6 +433,10 @@ For OpenSearch resources, `data.resources.list` and package initialization do
 not create a client. The client is created lazily on search/index/delete
 operations, explicit native access or `data.doctor`.
 
+For Redis resources, `data.resources.list` and package initialization do not
+create a client. The client is created lazily on key-value, lock, stream,
+explicit native access or `data.doctor` operations.
+
 For Qdrant resources, `data.resources.list` and package initialization do not
 create a Qdrant client. The client is created lazily on vector operations,
 explicit native access or `data.doctor`.
@@ -406,6 +479,10 @@ For OpenSearch resources, the native handle is the underlying OpenSearch client.
 Prefer `SearchIndexPort`; use native access only for index settings, mappings or
 backend-specific operations that do not belong in the narrow port.
 
+For Redis resources, the native handle is the underlying Redis client. Prefer
+`KeyValuePort`, `LockPort` and `StreamPort`; use native access only for
+backend-specific operations that do not belong in the narrow ports.
+
 ## Actions
 
 - `data.resources.list` — list configured resources, capabilities and lazy init
@@ -435,6 +512,7 @@ Run the local smoke example:
 PYTHONPATH=../muscles/src:src python3 examples/run_data_runtime.py
 PYTHONPATH=../muscles/src:src python3 examples/run_elasticsearch_search_port.py
 PYTHONPATH=../muscles/src:src python3 examples/run_opensearch_search_port.py
+PYTHONPATH=../muscles/src:src python3 examples/run_redis_data_port.py
 PYTHONPATH=../muscles/src:src python3 examples/run_sql_resource_port.py
 PYTHONPATH=../muscles/src:src python3 examples/run_sqlalchemy_resource_port.py
 PYTHONPATH=../muscles/src:src python3 examples/run_qdrant_vector_port.py

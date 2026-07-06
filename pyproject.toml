@@ -23,6 +23,9 @@ opensearch = [
 qdrant = [
   "qdrant-client>=1.10",
 ]
+redis = [
+  "redis>=5.0",
+]
 sqlalchemy = [
   "SQLAlchemy>=2.0",
 ]

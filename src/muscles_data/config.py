@@ -44,6 +44,8 @@ class DataConfig:
                     raise ValueError(f"opensearch data resource '{name}' requires url")
                 if not normalized.get("index"):
                     raise ValueError(f"opensearch data resource '{name}' requires index")
+            if resource_type == "redis" and not normalized.get("url"):
+                raise ValueError(f"redis data resource '{name}' requires url")
             capabilities = {
                 normalize_capability(item)
                 for item in normalized.get("capabilities", []) or []

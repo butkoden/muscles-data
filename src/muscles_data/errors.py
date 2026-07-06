@@ -103,3 +103,19 @@ class OpenSearchConnectionError(OpenSearchAdapterError):
 
 class OpenSearchFilterError(OpenSearchAdapterError):
     """Raised when a data filter cannot be translated to OpenSearch."""
+
+
+class RedisAdapterError(DataError):
+    """Base error for Redis data adapter failures."""
+
+
+class RedisConfigError(ValueError, RedisAdapterError):
+    """Raised when a Redis resource config cannot be mapped safely."""
+
+
+class RedisClientMissingError(RedisAdapterError):
+    """Raised when Redis adapter is used without an available client."""
+
+
+class RedisConnectionError(RedisAdapterError):
+    """Raised when a Redis operation cannot reach or use the backend."""

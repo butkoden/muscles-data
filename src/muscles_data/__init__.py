@@ -10,9 +10,11 @@ if TYPE_CHECKING:
     from .ports import (
         DocumentStorePort,
         KeyValuePort,
+        LockPort,
         ObjectStorePort,
         SearchIndexPort,
         SqlResourcePort,
+        StreamPort,
         VectorSearchPort,
     )
     from .runtime import DataResourceHandle, DataRuntime
@@ -29,9 +31,11 @@ __all__ = [
     "DataRuntime",
     "DocumentStorePort",
     "KeyValuePort",
+    "LockPort",
     "ObjectStorePort",
     "SearchIndexPort",
     "SqlResourcePort",
+    "StreamPort",
     "VectorSearchPort",
     "init_package",
 ]
@@ -68,6 +72,9 @@ def __getattr__(name: str):
     if name == "KeyValuePort":
         from .ports import KeyValuePort
         return KeyValuePort
+    if name == "LockPort":
+        from .ports import LockPort
+        return LockPort
     if name == "ObjectStorePort":
         from .ports import ObjectStorePort
         return ObjectStorePort
@@ -77,6 +84,9 @@ def __getattr__(name: str):
     if name == "SqlResourcePort":
         from .ports import SqlResourcePort
         return SqlResourcePort
+    if name == "StreamPort":
+        from .ports import StreamPort
+        return StreamPort
     if name == "VectorSearchPort":
         from .ports import VectorSearchPort
         return VectorSearchPort
