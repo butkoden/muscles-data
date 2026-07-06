@@ -22,6 +22,46 @@ or require an explicit native-client escape hatch.
 - `SqlResourcePort` — bridge contract to SQL resources; SQL lifecycle remains in
   `muscles-sql` or a project adapter.
 
+## Qdrant Vector Adapter
+
+`type: qdrant` is the built-in optional adapter for `VectorSearchPort`:
+
+```python
+vector = runtime.require_port("vector.docs", VectorSearchPort)
+hits = vector.search_vectors([0.1, 0.9], filters={"section": "docs"}, limit=5)
+```
+
+Config:
+
+```yaml
+data:
+  resources:
+    vector.docs:
+      type: qdrant
+      url: ${QDRANT_URL}
+      api_key: ${QDRANT_API_KEY}
+      collection: docs
+      timeout: 3
+      prefer_grpc: false
+```
+
+The adapter owns lazy client creation, collection name binding, payload filter
+translation, vector search, vector upsert/delete, health checks and safe
+diagnostics. It does not own embeddings, RAG logic, payload schema design or
+collection migrations.
+
+Filter mapping is intentionally small and deterministic:
+
+- scalar value -> `MatchValue`;
+- list/tuple/set -> `MatchAny`;
+- `gt`, `gte`, `lt`, `lte` mapping -> Qdrant `Range`;
+- `$and`, `$or`, `$not` -> boolean groups.
+
+Diagnostics redact `url` and `api_key`. `data.doctor` checks collection
+availability, while `data.resources.list` does not create a client. Native
+Qdrant access is available only when `native_client: true` is set and should
+remain an advanced project escape hatch.
+
 ## SQL Bridge
 
 `SqlResourcePort` exists so framework packages can ask for SQL as a named data
@@ -72,6 +112,9 @@ This keeps framework package startup fast and safe.
 
 For SQL, registry resolution and health checks also remain lazy. `data.doctor`
 may call SQL inspect/health behavior, but `data.resources.list` does not.
+
+For Qdrant, the real client is also lazy. It is created only by vector
+operations, explicit native access or `data.doctor`.
 
 ## Diagnostics
 

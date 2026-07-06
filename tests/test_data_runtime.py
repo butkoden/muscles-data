@@ -16,9 +16,18 @@ from muscles_data.adapters.memory import (
     InMemoryVectorAdapter,
     SqlBridgeFactory,
 )
+from muscles_data.adapters.qdrant import QdrantVectorFactory, qdrant_filter_from_mapping
 from muscles_data.catalog import DataAdapterCatalog
 from muscles_data.config import DataConfig
-from muscles_data.errors import DataCapabilityError, SqlConnectionMissingError, SqlRegistryMissingError
+from muscles_data.errors import (
+    DataCapabilityError,
+    QdrantClientMissingError,
+    QdrantConnectionError,
+    QdrantDimensionError,
+    QdrantFilterError,
+    SqlConnectionMissingError,
+    SqlRegistryMissingError,
+)
 from muscles_data.models import DataCapability, DataResourceConfig
 from muscles_data.ports import (
     DocumentStorePort,
@@ -89,6 +98,95 @@ class FakeSqlRegistry:
             raise KeyError(f"Unknown SQL connection: {name}")
 
 
+class FakeQdrantPoint:
+    def __init__(self, point_id: str, score: float, payload: dict[str, Any]) -> None:
+        self.id = point_id
+        self.score = score
+        self.payload = payload
+        self.version = 7
+
+
+class FakeQdrantQueryResult:
+    def __init__(self, points: list[FakeQdrantPoint]) -> None:
+        self.points = points
+
+
+class FakeQdrantClient:
+    def __init__(self, *, fail_health: bool = False) -> None:
+        self.fail_health = fail_health
+        self.queries: list[dict[str, Any]] = []
+        self.upserts: list[dict[str, Any]] = []
+        self.deletes: list[dict[str, Any]] = []
+        self.collection_checks: list[str] = []
+        self.closed = False
+
+    def query_points(self, **kwargs):
+        self.queries.append(kwargs)
+        return FakeQdrantQueryResult(
+            [
+                FakeQdrantPoint("doc-1", 0.91, {"section": "docs", "title": "Qdrant"}),
+                FakeQdrantPoint("doc-2", 0.42, {"section": "other"}),
+            ]
+        )
+
+    def upsert(self, **kwargs):
+        self.upserts.append(kwargs)
+        return SimpleNamespace(status="completed")
+
+    def delete(self, **kwargs):
+        self.deletes.append(kwargs)
+        return SimpleNamespace(status="completed")
+
+    def collection_exists(self, collection_name: str) -> bool:
+        self.collection_checks.append(collection_name)
+        if self.fail_health:
+            raise TimeoutError("connection timed out")
+        return collection_name == "docs"
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class FakeQdrantModels:
+    class MatchValue:
+        def __init__(self, value) -> None:
+            self.value = value
+
+    class MatchAny:
+        def __init__(self, any) -> None:
+            self.any = any
+
+    class Range:
+        def __init__(self, **kwargs) -> None:
+            self.values = kwargs
+
+    class FieldCondition:
+        def __init__(self, *, key: str, match=None, range=None) -> None:
+            self.key = key
+            self.match = match
+            self.range = range
+
+    class Filter:
+        def __init__(self, *, must=None, should=None, must_not=None) -> None:
+            self.must = must or []
+            self.should = should or []
+            self.must_not = must_not or []
+
+    class PointStruct:
+        def __init__(self, *, id, vector, payload=None) -> None:
+            self.id = id
+            self.vector = vector
+            self.payload = payload or {}
+
+    class PointIdsList:
+        def __init__(self, *, points) -> None:
+            self.points = points
+
+    class FilterSelector:
+        def __init__(self, *, filter) -> None:
+            self.filter = filter
+
+
 def _config() -> dict[str, Any]:
     return {
         "data": {
@@ -101,6 +199,24 @@ def _config() -> dict[str, Any]:
                 "native.debug": {"type": "memory_kv", "native_client": True},
                 "sql.main": {"type": "sql", "connection": "main", "role": "read_write"},
                 "broken.one": {"type": "missing_factory"},
+            }
+        }
+    }
+
+
+def _qdrant_config() -> dict[str, Any]:
+    return {
+        "data": {
+            "resources": {
+                "vector.qdrant": {
+                    "type": "qdrant",
+                    "url": "https://qdrant.example",
+                    "api_key": "qdrant-secret",
+                    "collection": "docs",
+                    "timeout": 1.5,
+                    "prefer_grpc": True,
+                    "native_client": True,
+                }
             }
         }
     }
@@ -137,6 +253,16 @@ def test_catalog_rejects_duplicate_factory():
 def test_sql_resource_config_requires_connection():
     with pytest.raises(ValueError, match="requires connection"):
         DataConfig.from_raw({"data": {"resources": {"sql.main": {"type": "sql"}}}})
+
+
+def test_qdrant_resource_config_requires_url_and_collection():
+    assert DataConfig.from_raw(_qdrant_config()).resources["vector.qdrant"].type == "qdrant"
+
+    with pytest.raises(ValueError, match="requires url"):
+        DataConfig.from_raw({"data": {"resources": {"vector.qdrant": {"type": "qdrant", "collection": "docs"}}}})
+
+    with pytest.raises(ValueError, match="requires collection"):
+        DataConfig.from_raw({"data": {"resources": {"vector.qdrant": {"type": "qdrant", "url": "http://localhost:6333"}}}})
 
 
 def test_runtime_lazy_initialization_and_capability_mismatch():
@@ -332,6 +458,134 @@ def test_sql_doctor_handles_partial_failure_safely():
     assert "secret" not in repr(doctor)
 
 
+def test_qdrant_vector_port_is_registered_lazy_and_maps_operations():
+    client = FakeQdrantClient()
+    catalog = DataAdapterCatalog.with_defaults(
+        qdrant_client_factory=lambda _config: client,
+        qdrant_models_provider=lambda: FakeQdrantModels,
+    )
+    runtime = DataRuntime(config=DataConfig.from_raw(_qdrant_config()), catalog=catalog)
+
+    listed = runtime.list_resources()
+    qdrant = next(item for item in listed if item["name"] == "vector.qdrant")
+
+    assert qdrant["type"] == "qdrant"
+    assert {"vector_search", "vector_write"} <= set(qdrant["capabilities"])
+    assert "native_client" not in qdrant["capabilities"]
+    assert client.queries == []
+
+    vector = runtime.require_port("vector.qdrant", VectorSearchPort)
+    hits = vector.search_vectors([0.1, 0.9], filters={"section": "docs", "year": {"gte": 2024}}, limit=2)
+    write = vector.upsert_vectors(
+        [
+            {"id": "doc-1", "vector": [0.1, 0.9], "payload": {"section": "docs"}},
+            {"id": "doc-2", "vector": [0.2, 0.8]},
+        ],
+        options={"wait": True},
+    )
+    deleted_ids = vector.delete_vectors(ids=["doc-2"], options={"wait": True})
+    deleted_filter = vector.delete_vectors(filters={"section": ["docs", "notes"]})
+
+    assert [hit.id for hit in hits] == ["doc-1", "doc-2"]
+    assert hits[0].score == pytest.approx(0.91)
+    assert hits[0].payload["section"] == "docs"
+    assert hits[0].metadata["backend"] == "qdrant"
+    assert hits[0].metadata["version"] == 7
+    assert client.queries[0]["collection_name"] == "docs"
+    assert client.queries[0]["limit"] == 2
+    assert client.queries[0]["with_payload"] is True
+    assert client.queries[0]["with_vectors"] is False
+    assert client.queries[0]["query_filter"].must[0].key == "section"
+    assert client.queries[0]["query_filter"].must[1].range.values == {"gte": 2024}
+    assert write.written == 2
+    assert client.upserts[0]["points"][0].id == "doc-1"
+    assert client.upserts[0]["points"][0].payload == {"section": "docs"}
+    assert deleted_ids.deleted == 1
+    assert client.deletes[0]["points_selector"].points == ["doc-2"]
+    assert deleted_filter.status == "ok"
+    assert client.deletes[1]["points_selector"].filter.must[0].match.any == ["docs", "notes"]
+
+    native = runtime.require_resource("vector.qdrant", DataCapability.NATIVE_CLIENT).native_client()
+    assert native is client
+    assert client.collection_checks == []
+
+
+def test_qdrant_filter_translation_is_deterministic_and_rejects_unknown_operators():
+    translated = qdrant_filter_from_mapping(
+        {
+            "$or": [{"section": "docs"}, {"section": "notes"}],
+            "$not": {"archived": True},
+            "score": {"gt": 0.5, "lte": 0.9},
+        },
+        models=FakeQdrantModels,
+    )
+
+    assert [condition.key for condition in translated.should] == ["section", "section"]
+    assert translated.must_not[0].key == "archived"
+    assert translated.must[0].key == "score"
+    assert translated.must[0].range.values == {"gt": 0.5, "lte": 0.9}
+
+    with pytest.raises(QdrantFilterError, match="Unsupported Qdrant filter operator"):
+        qdrant_filter_from_mapping({"score": {"near": 1.0}}, models=FakeQdrantModels)
+
+
+def test_qdrant_inspect_doctor_close_and_safe_failures():
+    client = FakeQdrantClient()
+    runtime = DataRuntime(
+        config=DataConfig.from_raw(_qdrant_config()),
+        catalog=DataAdapterCatalog.with_defaults(
+            qdrant_client_factory=lambda _config: client,
+            qdrant_models_provider=lambda: FakeQdrantModels,
+        ),
+    )
+
+    inspect_before = runtime.inspect_resource("vector.qdrant")
+    assert inspect_before["initialized"] is False
+    assert inspect_before["options"]["url"] == "***"
+    assert inspect_before["options"]["api_key"] == "***"
+
+    doctor = runtime.doctor()
+    qdrant_checks = [check for check in doctor["checks"] if check["resource"] == "vector.qdrant"]
+
+    assert qdrant_checks[0]["status"] == "ok"
+    assert client.collection_checks == ["docs"]
+    assert "qdrant-secret" not in repr(doctor)
+    with pytest.raises(QdrantDimensionError, match="must not be empty"):
+        runtime.require_port("vector.qdrant", VectorSearchPort).search_vectors([])
+    assert runtime.close()["status"] == "ok"
+    assert client.closed is True
+
+    missing_client_runtime = DataRuntime(
+        config=DataConfig.from_raw(_qdrant_config()),
+        catalog=DataAdapterCatalog.with_defaults(qdrant_client_factory=lambda _config: None),
+    )
+    with pytest.raises(QdrantClientMissingError):
+        missing_client_runtime.require_port("vector.qdrant", VectorSearchPort).search_vectors([1.0])
+
+    failing_runtime = DataRuntime(
+        config=DataConfig.from_raw(_qdrant_config()),
+        catalog=DataAdapterCatalog.with_defaults(
+            qdrant_client_factory=lambda _config: FakeQdrantClient(fail_health=True),
+            qdrant_models_provider=lambda: FakeQdrantModels,
+        ),
+    )
+    failing_doctor = failing_runtime.doctor()
+    assert failing_doctor["status"] == "failed"
+    assert [check for check in failing_doctor["checks"] if check["resource"] == "vector.qdrant"][0]["status"] == "failed"
+
+    bad_client = FakeQdrantClient()
+    bad_client.query_points = lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("network unavailable"))
+    bad_runtime = DataRuntime(
+        config=DataConfig.from_raw(_qdrant_config()),
+        catalog=DataAdapterCatalog.with_defaults(
+            qdrant_client_factory=lambda _config: bad_client,
+            qdrant_models_provider=lambda: FakeQdrantModels,
+        ),
+    )
+    with pytest.raises(QdrantConnectionError, match="network unavailable"):
+        bad_runtime.require_port("vector.qdrant", VectorSearchPort).search_vectors([1.0])
+
+
 def test_runtime_close_is_idempotent():
     runtime = DataRuntime(config=DataConfig.from_raw(_config()), catalog=DataAdapterCatalog.with_defaults())
     runtime.require_port("cache.default", KeyValuePort)
@@ -345,10 +599,16 @@ def test_runtime_close_is_idempotent():
 
 def test_data_source_does_not_import_vendor_or_ai_packages():
     source_root = __import__("pathlib").Path(__file__).resolve().parents[1] / "src" / "muscles_data"
-    source_text = "\n".join(path.read_text(encoding="utf-8") for path in source_root.rglob("*.py"))
+    core_text = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in source_root.rglob("*.py")
+        if path.name != "qdrant.py"
+    )
 
-    for marker in ("muscles_ai", "muscles_otel", "qdrant", "elasticsearch", "opensearch", "redis", "pymongo", "boto3", "sqlalchemy"):
-        assert marker not in source_text
+    for marker in ("muscles_ai", "muscles_otel", "elasticsearch", "opensearch", "redis", "pymongo", "boto3", "sqlalchemy"):
+        assert marker not in core_text
+    qdrant_source = source_root / "adapters" / "qdrant.py"
+    assert "from qdrant_client" not in qdrant_source.read_text(encoding="utf-8")
 
 
 def test_package_public_exports():

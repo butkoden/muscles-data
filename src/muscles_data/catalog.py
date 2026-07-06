@@ -37,7 +37,13 @@ class DataAdapterCatalog:
         return [{"type": name} for name in sorted(self._factories)]
 
     @classmethod
-    def with_defaults(cls, *, sql_registry_provider=None) -> "DataAdapterCatalog":
+    def with_defaults(
+        cls,
+        *,
+        sql_registry_provider=None,
+        qdrant_client_factory=None,
+        qdrant_models_provider=None,
+    ) -> "DataAdapterCatalog":
         from .adapters.memory import (
             InMemoryDocumentStoreFactory,
             InMemoryKeyValueFactory,
@@ -46,10 +52,12 @@ class DataAdapterCatalog:
             InMemoryVectorFactory,
             SqlBridgeFactory,
         )
+        from .adapters.qdrant import QdrantVectorFactory
 
         catalog = cls()
         for factory in (
             InMemoryVectorFactory(),
+            QdrantVectorFactory(client_factory=qdrant_client_factory, models_provider=qdrant_models_provider),
             InMemorySearchIndexFactory(),
             InMemoryObjectStoreFactory(),
             InMemoryKeyValueFactory(),

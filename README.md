@@ -52,6 +52,14 @@ data:
     vector.docs:
       type: memory_vector
 
+    vector.qdrant:
+      type: qdrant
+      url: ${QDRANT_URL}
+      api_key: ${QDRANT_API_KEY}
+      collection: docs
+      timeout: 3
+      prefer_grpc: false
+
     search.docs:
       type: memory_search
 
@@ -71,8 +79,57 @@ data:
 ```
 
 Real backend adapters are added as optional adapter modules/factories. The core
-package does not import Qdrant, OpenSearch, Elasticsearch, Redis, MongoDB, S3 or
-SQLAlchemy clients.
+package does not import OpenSearch, Elasticsearch, Redis, MongoDB, S3 or
+SQLAlchemy clients. Qdrant support lives in an optional adapter module and
+imports `qdrant-client` only when a `type: qdrant` resource is used.
+
+### Qdrant Vector Resources
+
+`type: qdrant` implements `VectorSearchPort` over a Qdrant collection:
+
+```yaml
+data:
+  resources:
+    vector.docs:
+      type: qdrant
+      url: ${QDRANT_URL}
+      api_key: ${QDRANT_API_KEY}
+      collection: docs
+      timeout: 3
+      prefer_grpc: false
+```
+
+Install the optional client in projects that use the real adapter:
+
+```bash
+python -m pip install 'muscles-data[qdrant]'
+```
+
+Use it through the port:
+
+```python
+from muscles_data.ports import VectorSearchPort
+
+vector = runtime.require_port("vector.docs", VectorSearchPort)
+hits = vector.search_vectors(
+    [0.1, 0.9],
+    filters={"section": "docs", "year": {"gte": 2024}},
+    limit=10,
+)
+```
+
+Capabilities are `vector_search`, `vector_write` and `healthcheck`; add
+`native_client: true` only for advanced project-specific Qdrant operations.
+Supported filters map deterministic payload conditions to Qdrant:
+
+- `{"field": "value"}` -> exact match;
+- `{"field": ["a", "b"]}` -> any-of match;
+- `{"year": {"gte": 2024, "lt": 2026}}` -> range;
+- `$and`, `$or`, `$not` -> boolean groups.
+
+`upsert_vectors()` accepts items with `id`, `vector` and optional `payload`.
+`delete_vectors()` accepts either ids or filters. The adapter does not create
+embeddings, design payload schemas or manage collection migrations.
 
 ### SQL Resources
 
@@ -136,6 +193,10 @@ For SQL resources, `data.resources.list` and package initialization do not open
 SQL connections. A SQL registry is resolved only when the SQL port is used or
 when `data.doctor` runs health checks.
 
+For Qdrant resources, `data.resources.list` and package initialization do not
+create a Qdrant client. The client is created lazily on vector operations,
+explicit native access or `data.doctor`.
+
 ## Native Escape Hatch
 
 The preferred path is always a typed port. A project may explicitly request a
@@ -155,6 +216,10 @@ credentials and raw payloads are never included in inspect/doctor output.
 
 For SQL resources, the native handle is the underlying SQL registry/connection
 API. Prefer `SqlResourcePort`; use native access only for project-specific SQL
+operations that cannot be represented by the port.
+
+For Qdrant resources, the native handle is the underlying `QdrantClient`.
+Prefer `VectorSearchPort`; use native access only for backend-specific
 operations that cannot be represented by the port.
 
 ## Actions
@@ -185,6 +250,7 @@ Run the local smoke example:
 ```bash
 PYTHONPATH=../muscles/src:src python3 examples/run_data_runtime.py
 PYTHONPATH=../muscles/src:src python3 examples/run_sql_resource_port.py
+PYTHONPATH=../muscles/src:src python3 examples/run_qdrant_vector_port.py
 ```
 
 Run tests:
