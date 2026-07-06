@@ -43,6 +43,7 @@ class DataAdapterCatalog:
         sql_registry_provider=None,
         sqlalchemy_provider=None,
         elasticsearch_client_factory=None,
+        opensearch_client_factory=None,
         qdrant_client_factory=None,
         qdrant_models_provider=None,
     ) -> "DataAdapterCatalog":
@@ -55,6 +56,7 @@ class DataAdapterCatalog:
             InMemoryVectorFactory,
             SqlBridgeFactory,
         )
+        from .adapters.opensearch import OpenSearchSearchFactory
         from .adapters.qdrant import QdrantVectorFactory
         from .adapters.sqlalchemy import SqlAlchemySqlResourceFactory
 
@@ -64,6 +66,7 @@ class DataAdapterCatalog:
             QdrantVectorFactory(client_factory=qdrant_client_factory, models_provider=qdrant_models_provider),
             InMemorySearchIndexFactory(),
             ElasticsearchSearchFactory(client_factory=elasticsearch_client_factory),
+            OpenSearchSearchFactory(client_factory=opensearch_client_factory),
             InMemoryObjectStoreFactory(),
             InMemoryKeyValueFactory(),
             InMemoryDocumentStoreFactory(),
