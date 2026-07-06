@@ -14,21 +14,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-elasticsearch = [
-  "elasticsearch>=8.0",
-]
-opensearch = [
-  "opensearch-py>=2.0",
-]
-qdrant = [
-  "qdrant-client>=1.10",
-]
-redis = [
-  "redis>=5.0",
-]
-sqlalchemy = [
-  "SQLAlchemy>=2.0",
-]
 dev = [
   "pytest>=8.0,<9.0",
 ]

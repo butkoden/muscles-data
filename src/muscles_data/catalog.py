@@ -41,14 +41,7 @@ class DataAdapterCatalog:
         cls,
         *,
         sql_registry_provider=None,
-        sqlalchemy_provider=None,
-        elasticsearch_client_factory=None,
-        opensearch_client_factory=None,
-        qdrant_client_factory=None,
-        qdrant_models_provider=None,
-        redis_client_factory=None,
     ) -> "DataAdapterCatalog":
-        from .adapters.elasticsearch import ElasticsearchSearchFactory
         from .adapters.memory import (
             InMemoryDocumentStoreFactory,
             InMemoryKeyValueFactory,
@@ -57,24 +50,15 @@ class DataAdapterCatalog:
             InMemoryVectorFactory,
             SqlBridgeFactory,
         )
-        from .adapters.opensearch import OpenSearchSearchFactory
-        from .adapters.qdrant import QdrantVectorFactory
-        from .adapters.redis import RedisDataFactory
-        from .adapters.sqlalchemy import SqlAlchemySqlResourceFactory
 
         catalog = cls()
         for factory in (
             InMemoryVectorFactory(),
-            QdrantVectorFactory(client_factory=qdrant_client_factory, models_provider=qdrant_models_provider),
             InMemorySearchIndexFactory(),
-            ElasticsearchSearchFactory(client_factory=elasticsearch_client_factory),
-            OpenSearchSearchFactory(client_factory=opensearch_client_factory),
             InMemoryObjectStoreFactory(),
             InMemoryKeyValueFactory(),
-            RedisDataFactory(client_factory=redis_client_factory),
             InMemoryDocumentStoreFactory(),
             SqlBridgeFactory(registry_provider=sql_registry_provider),
-            SqlAlchemySqlResourceFactory(sqlalchemy_provider=sqlalchemy_provider),
         ):
             catalog.register(factory)
         return catalog

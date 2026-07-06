@@ -27,25 +27,6 @@ class DataConfig:
                 raise ValueError(f"data resource '{name}' requires type")
             if resource_type == "sql" and not normalized.get("connection"):
                 raise ValueError(f"sql data resource '{name}' requires connection")
-            if resource_type == "sqlalchemy" and not normalized.get("url"):
-                raise ValueError(f"sqlalchemy data resource '{name}' requires url")
-            if resource_type == "qdrant":
-                if not normalized.get("url"):
-                    raise ValueError(f"qdrant data resource '{name}' requires url")
-                if not normalized.get("collection"):
-                    raise ValueError(f"qdrant data resource '{name}' requires collection")
-            if resource_type == "elasticsearch":
-                if not normalized.get("url"):
-                    raise ValueError(f"elasticsearch data resource '{name}' requires url")
-                if not normalized.get("index"):
-                    raise ValueError(f"elasticsearch data resource '{name}' requires index")
-            if resource_type == "opensearch":
-                if not normalized.get("url"):
-                    raise ValueError(f"opensearch data resource '{name}' requires url")
-                if not normalized.get("index"):
-                    raise ValueError(f"opensearch data resource '{name}' requires index")
-            if resource_type == "redis" and not normalized.get("url"):
-                raise ValueError(f"redis data resource '{name}' requires url")
             capabilities = {
                 normalize_capability(item)
                 for item in normalized.get("capabilities", []) or []

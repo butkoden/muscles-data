@@ -6,7 +6,9 @@ Do not merge all database features into one generic API. Share only:
 
 - lifecycle;
 - capabilities;
-- narrow typed ports.
+- narrow typed ports;
+- safe diagnostics;
+- adapter registration.
 
 If a feature has different semantics across backends, keep it in adapter options
 or require an explicit native-client escape hatch.
@@ -22,240 +24,22 @@ or require an explicit native-client escape hatch.
 - `StreamPort` — minimal publish/read/ack stream contract.
 - `DocumentStorePort` — simple document DB get/upsert/find/delete.
 - `SqlResourcePort` — bridge contract to SQL resources; SQL lifecycle remains in
-  `muscles-sql` or a project adapter.
+  `muscles-sql`, a project registry or a registered adapter.
 
-## Elasticsearch Search Adapter
+## Core Adapters
 
-`type: elasticsearch` is the built-in optional adapter for `SearchIndexPort`:
+Core registers only lightweight adapters that have no vendor SDK dependency:
 
-```python
-search = runtime.require_port("search.docs", SearchIndexPort)
-hits = search.search_text("postgres kafka", filters={"section": "docs"}, limit=5)
-```
+- `memory_vector` -> `VectorSearchPort`;
+- `memory_search` -> `SearchIndexPort`;
+- `memory_object` -> `ObjectStorePort`;
+- `memory_kv` -> `KeyValuePort`, `LockPort`, `StreamPort`;
+- `memory_document` -> `DocumentStorePort`;
+- `sql` -> `SqlResourcePort` bridge to a supplied SQL registry.
 
-Config:
-
-```yaml
-data:
-  resources:
-    search.docs:
-      type: elasticsearch
-      url: ${ELASTICSEARCH_URL}
-      api_key: ${ELASTICSEARCH_API_KEY}
-      index: docs
-      timeout: 3
-      verify_certs: true
-```
-
-The adapter owns lazy client creation, index name binding, metadata filter
-translation, BM25/full-text search, document upsert/delete, highlight passthrough
-when requested, health checks and safe diagnostics. It does not own analyzers,
-mappings, document parsing, embeddings, RAG orchestration or reranking.
-
-Filter mapping is intentionally small and deterministic:
-
-- scalar value -> `term` on `metadata.<field>`;
-- list/tuple/set -> `terms`;
-- `gt`, `gte`, `lt`, `lte` mapping -> `range`;
-- `$and`, `$or`, `$not` -> boolean groups.
-
-`search_text(..., options={"highlight": True})` requests highlights for the
-configured text field and returns them on `SearchHit.highlights`.
-`upsert_documents()` writes `id`, `text`, and optional `metadata`/`payload`.
-`delete_documents()` accepts ids or filters.
-
-Diagnostics redact `url`, `api_key`, password and auth fields. `data.doctor`
-checks client ping and index availability, while `data.resources.list` does not
-create a client. Native Elasticsearch access is available only when
-`native_client: true` is set and should remain an advanced project escape hatch.
-
-## OpenSearch Search Adapter
-
-`type: opensearch` is the built-in optional adapter for `SearchIndexPort` over
-OpenSearch:
-
-```python
-search = runtime.require_port("search.public", SearchIndexPort)
-hits = search.search_text("resume facts", filters={"section": "docs"}, limit=5)
-```
-
-Config:
-
-```yaml
-data:
-  resources:
-    search.public:
-      type: opensearch
-      url: ${OPENSEARCH_URL}
-      username: ${OPENSEARCH_USER}
-      password: ${OPENSEARCH_PASSWORD}
-      index: docs
-      timeout: 3
-      verify_certs: true
-```
-
-The adapter owns lazy client creation, index name binding, metadata filter
-translation, BM25/full-text search, document upsert/delete, highlight passthrough
-when requested, health checks and safe diagnostics. It does not own index
-lifecycle automation, analyzers, mappings, document parsing, embeddings, RAG
-orchestration or reranking.
-
-Filter mapping intentionally matches the Elasticsearch adapter:
-
-- scalar value -> `term` on `metadata.<field>`;
-- list/tuple/set -> `terms`;
-- `gt`, `gte`, `lt`, `lte` mapping -> `range`;
-- `$and`, `$or`, `$not` -> boolean groups.
-
-The implementation is separate from Elasticsearch because OpenSearch uses the
-`opensearch-py` dependency and OpenSearch client request conventions such as
-`body=...`. Framework packages still see only `SearchIndexPort`.
-
-Diagnostics redact `url`, password and auth fields. `data.doctor` checks client
-ping and index availability, while `data.resources.list` does not create a
-client. Native OpenSearch access is available only when `native_client: true` is
-set and should remain an advanced project escape hatch.
-
-## Redis Key-Value, Lock and Stream Adapter
-
-`type: redis` is the built-in optional adapter for `KeyValuePort`, `LockPort`
-and `StreamPort`:
-
-```python
-cache = runtime.require_port("cache.default", KeyValuePort)
-cache.set("cursor", b"page-2", ttl_seconds=60)
-
-lock = runtime.require_port("cache.default", LockPort)
-handle = lock.acquire_lock("sync", ttl_seconds=30)
-if handle is not None:
-    lock.release_lock(handle)
-```
-
-Config:
-
-```yaml
-data:
-  resources:
-    cache.default:
-      type: redis
-      url: ${REDIS_URL}
-      namespace: app
-      timeout: 3
-      stream_group: workers
-```
-
-The adapter owns lazy client creation, key namespacing, TTL key-value
-operations, lock acquire/release, simple stream publish/read/ack operations,
-health checks and safe diagnostics. It does not own business cache schemas, job
-frameworks, consumer group lifecycle, distributed transaction guarantees or
-project serialization policy.
-
-Namespacing is deterministic:
-
-- `cache.get("cursor")` -> `app:cursor`;
-- `lock.acquire_lock("job", ...)` -> `app:lock:job`;
-- `stream.publish("events", ...)` -> `app:stream:events`.
-
-Lock acquisition uses atomic Redis `SET` with `NX` and `PX`. Release uses a Lua
-compare-and-delete script, so a caller can only release the lock if the stored
-token matches its `LockHandle`. Releasing an expired or replaced lock is
-idempotent and returns an empty `WriteResult`.
-
-Stream support stays intentionally narrow. `publish()` maps to `XADD`,
-`read()` maps to `XREAD`, and `ack()` maps to `XACK` with `stream_group`
-(default: `default`). Projects own consumer group creation, retry/dead-letter
-policy and message schemas.
-
-Diagnostics redact `url`. `data.doctor` performs `PING`, while
-`data.resources.list` does not create a client. Native Redis access is
-available only when `native_client: true` is set and should remain an advanced
-project escape hatch.
-
-## Qdrant Vector Adapter
-
-`type: qdrant` is the built-in optional adapter for `VectorSearchPort`:
-
-```python
-vector = runtime.require_port("vector.docs", VectorSearchPort)
-hits = vector.search_vectors([0.1, 0.9], filters={"section": "docs"}, limit=5)
-```
-
-Config:
-
-```yaml
-data:
-  resources:
-    vector.docs:
-      type: qdrant
-      url: ${QDRANT_URL}
-      api_key: ${QDRANT_API_KEY}
-      collection: docs
-      timeout: 3
-      prefer_grpc: false
-```
-
-The adapter owns lazy client creation, collection name binding, payload filter
-translation, vector search, vector upsert/delete, health checks and safe
-diagnostics. It does not own embeddings, RAG logic, payload schema design or
-collection migrations.
-
-Filter mapping is intentionally small and deterministic:
-
-- scalar value -> `MatchValue`;
-- list/tuple/set -> `MatchAny`;
-- `gt`, `gte`, `lt`, `lte` mapping -> Qdrant `Range`;
-- `$and`, `$or`, `$not` -> boolean groups.
-
-Diagnostics redact `url` and `api_key`. `data.doctor` checks collection
-availability, while `data.resources.list` does not create a client. Native
-Qdrant access is available only when `native_client: true` is set and should
-remain an advanced project escape hatch.
-
-## SQLAlchemy Direct Adapter
-
-`type: sqlalchemy` implements the same `SqlResourcePort` directly over a
-SQLAlchemy engine:
-
-```yaml
-data:
-  resources:
-    sql.local:
-      type: sqlalchemy
-      url: sqlite:///:memory:
-      name: local_sqlite
-      pool_pre_ping: true
-      native_client: false
-```
-
-The adapter imports SQLAlchemy lazily and creates the engine only when the port
-is used, native access is requested or `data.doctor` runs. It supports:
-
-- `connection_name()`;
-- `session()`;
-- `session_factory()`;
-- `inspect()`;
-- `doctor()`;
-- `close()`.
-
-Allowed engine options are intentionally narrow: `echo`, `pool_pre_ping`,
-`pool_size`, `max_overflow`, `connect_args` and `future`. Unknown options fail
-fast with a config error so project-specific connection behavior stays explicit.
-
-The adapter does not add repositories, Unit of Work, migrations, ORM model
-registration or a generic SQL query language. A project can build those layers
-on top of the SQLAlchemy session it gets from `SqlResourcePort`.
-
-Native SQLAlchemy access is available only with `native_client: true`:
-
-```python
-native = runtime.require_resource("sql.local", DataCapability.NATIVE_CLIENT).native_client()
-engine = native["engine"]
-session_factory = native["session_factory"]
-```
-
-Use this only for project-specific operations that do not belong in the narrow
-port. Diagnostics redact `url` and never include the native engine/session
-objects.
+`DataAdapterCatalog.with_defaults()` intentionally does not register
+Elasticsearch, OpenSearch, Redis, Qdrant, MongoDB, S3 or SQLAlchemy. Those
+factories live in separate adapter packages.
 
 ## SQL Bridge
 
@@ -267,17 +51,6 @@ sql = runtime.require_port("sql.main", SqlResourcePort)
 with sql.session() as session:
     ...
 ```
-
-Supported methods:
-
-- `connection_name()`;
-- `session()`;
-- `session_factory()`;
-- `inspect()`;
-- `doctor()`.
-
-The port delegates to `SqlConnectionRegistry`. It does not expose repositories,
-Unit of Work, migrations, SQLAlchemy models or a universal query API.
 
 Config:
 
@@ -294,6 +67,61 @@ data:
 `muscles-sql` or a compatible project registry. Diagnostics redact raw `url` and
 `dsn` fields while preserving already-safe fields such as `safe_url`.
 
+Supported methods:
+
+- `connection_name()`;
+- `session()`;
+- `session_factory()`;
+- `inspect()`;
+- `doctor()`.
+
+The port delegates to the registry. It does not expose repositories, Unit of
+Work, migrations, SQLAlchemy models or a universal query API.
+
+## External Adapter Packages
+
+Vendor adapters that pull extra dependencies live outside `muscles-data`. The
+core contract stays the same: install/register an adapter package in the
+project composition root, then use a typed port in framework/use-case code.
+
+```python
+from muscles_data.catalog import DataAdapterCatalog
+from muscles_data_elasticsearch import ElasticsearchSearchFactory
+from muscles_data_mongodb import MongoDocumentStoreFactory
+from muscles_data_qdrant import QdrantVectorFactory
+from muscles_data_s3 import S3ObjectStoreFactory
+
+catalog = DataAdapterCatalog.with_defaults()
+catalog.register(ElasticsearchSearchFactory())
+catalog.register(MongoDocumentStoreFactory())
+catalog.register(QdrantVectorFactory())
+catalog.register(S3ObjectStoreFactory())
+```
+
+Current adapter packages:
+
+| Package | Resource type | Port | Backend responsibility |
+| --- | --- | --- | --- |
+| `muscles-data-elasticsearch` | `elasticsearch` | `SearchIndexPort` | Elasticsearch full-text search, document upsert/delete, filters, highlights |
+| `muscles-data-opensearch` | `opensearch` | `SearchIndexPort` | OpenSearch full-text search, document upsert/delete, filters, highlights |
+| `muscles-data-redis` | `redis` | `KeyValuePort`, `LockPort`, `StreamPort` | Redis cache/key-value, locks and simple streams |
+| `muscles-data-qdrant` | `qdrant` | `VectorSearchPort` | Qdrant vector search, vector upsert/delete and payload filters |
+| `muscles-data-mongodb` | `mongodb` | `DocumentStorePort` | MongoDB document get/upsert/find/delete |
+| `muscles-data-s3` | `s3` | `ObjectStorePort` | S3-compatible object put/get/list/delete |
+| `muscles-data-sqlalchemy` | `sqlalchemy` | `SqlResourcePort` | Direct SQLAlchemy engine/session factory access through the SQL port |
+
+Each adapter owns:
+
+- vendor dependency imports;
+- lazy client creation;
+- backend-specific request translation;
+- backend-specific config validation;
+- safe diagnostics for its options;
+- native-client access when `native_client: true` is set.
+
+Core owns only the port contracts, runtime lifecycle, capability checks,
+resource actions and registration mechanism.
+
 ## Lazy Runtime
 
 `DataRuntime` parses config and keeps resource handles. Adapter factories are
@@ -308,24 +136,9 @@ This keeps framework package startup fast and safe.
 For SQL, registry resolution and health checks also remain lazy. `data.doctor`
 may call SQL inspect/health behavior, but `data.resources.list` does not.
 
-For direct SQLAlchemy resources, engine creation also remains lazy. Listing and
-initial package setup do not open database connections.
-
-For Elasticsearch, the real client is also lazy. It is created only by search,
-index/delete operations, explicit native access or `data.doctor`.
-
-For OpenSearch, the real client is also lazy. It is created only by search,
-index/delete operations, explicit native access or `data.doctor`.
-
-For Redis, the real client is also lazy. It is created only by key-value, lock,
-stream operations, explicit native access or `data.doctor`.
-
-For S3 resources from `muscles-data-s3`, the real boto3 client is also lazy. It
-is created only by object put/get/list/delete operations, explicit native access
-or `data.doctor`.
-
-For Qdrant, the real client is also lazy. It is created only by vector
-operations, explicit native access or `data.doctor`.
+External adapters must follow the same rule: listing resources and package init
+must not open database/network connections. Real clients are created only by
+port operations, explicit native access or `data.doctor`.
 
 ## Diagnostics
 
@@ -336,6 +149,26 @@ Diagnostics are safe by default:
 - raw query payloads and object/document/vector content are not printed;
 - missing adapter factories are reported per resource without failing the whole
   diagnostic call.
+
+Adapter packages may add backend-specific health checks, but they must not leak
+credentials or raw payloads in `inspect()` or `doctor()` output.
+
+## Native Escape Hatch
+
+The preferred path is always a typed port. A project may explicitly request a
+native/internal backend handle only when the resource declares the
+`native_client` capability:
+
+```python
+from muscles_data import DataCapability
+
+handle = runtime.require_resource("search.docs", DataCapability.NATIVE_CLIENT)
+native = handle.native_client()
+```
+
+Use native access only for project-specific operations that do not belong in the
+narrow port. Framework packages should not build their primary logic on native
+clients.
 
 ## Project Adapters
 
@@ -349,35 +182,3 @@ runtime = DataRuntime(config=config, catalog=catalog)
 
 The factory is responsible for translating the typed port into backend-specific
 client calls. Vendor dependencies remain inside the adapter module.
-
-## External Adapter Packages
-
-Vendor adapters that would pull extra dependencies can live outside
-`muscles-data`. The core contract stays the same:
-
-```python
-from muscles_data.catalog import DataAdapterCatalog
-from muscles_data.ports import DocumentStorePort, ObjectStorePort
-from muscles_data_mongodb import MongoDocumentStoreFactory
-from muscles_data_s3 import S3ObjectStoreFactory
-
-catalog = DataAdapterCatalog.with_defaults()
-catalog.register(MongoDocumentStoreFactory())
-catalog.register(S3ObjectStoreFactory())
-store = runtime.require_port("mongo.content", DocumentStorePort)
-objects = runtime.require_port("objects.docs", ObjectStorePort)
-```
-
-For MongoDB, `muscles-data-mongodb` owns the PyMongo dependency, lazy client
-creation, database binding, simple document operations and safe diagnostics.
-`muscles-data` owns only `DocumentStorePort`, runtime capability checks and the
-registration mechanism. Complex aggregations, indexes, migrations and schema
-validation remain project-level concerns or explicit native-client escape
-hatches.
-
-For S3-compatible storage, `muscles-data-s3` owns the boto3 dependency, lazy
-client creation, bucket binding, key prefix mapping, object operations and safe
-diagnostics. `muscles-data` owns only `ObjectStorePort`, runtime capability
-checks and the registration mechanism. Presigned URLs, multipart upload details,
-bucket policies, lifecycle rules and storage schemas remain project-level
-concerns or explicit native-client escape hatches.
