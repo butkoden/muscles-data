@@ -13,8 +13,10 @@ class DataPackage:
     namespace = "data"
 
     def build_runtime(self, app, config):
-        del app
-        return DataRuntime(config=_normalize_config(config or {}), catalog=DataAdapterCatalog.with_defaults())
+        return DataRuntime(
+            config=_normalize_config(config or {}),
+            catalog=DataAdapterCatalog.with_defaults(sql_registry_provider=_sql_registry_provider(app)),
+        )
 
     def services(self, app, runtime: DataRuntime):
         del app
@@ -117,6 +119,29 @@ def _dependency_container():
         return DependencyContainer()
     except Exception:  # pragma: no cover
         return _LegacyContainer()
+
+
+def _sql_registry_provider(app):
+    def resolve_registry():
+        container = getattr(app, "container", None)
+        if container is None:
+            return None
+        try:
+            from muscles_sql import SqlConnectionRegistry  # type: ignore[import-not-found]
+        except Exception:
+            SqlConnectionRegistry = None  # type: ignore[assignment]
+        if SqlConnectionRegistry is not None:
+            try:
+                return container.resolve(SqlConnectionRegistry)
+            except Exception:
+                pass
+        for attribute in ("sql_registry", "SqlConnectionRegistry"):
+            registry = getattr(container, attribute, None)
+            if registry is not None:
+                return registry
+        return None
+
+    return resolve_registry
 
 
 class _LegacyContainer:

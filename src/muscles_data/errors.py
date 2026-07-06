@@ -15,3 +15,15 @@ class DataAdapterNotFoundError(DataError):
 
 class DataCapabilityError(DataError):
     """Raised when a resource cannot provide the requested typed port/capability."""
+
+
+class SqlRegistryMissingError(DataError):
+    """Raised when a SQL resource cannot find a SQL connection registry."""
+
+
+class SqlConnectionMissingError(DataError):
+    """Raised when a SQL resource references an unknown named SQL connection."""
+
+
+class AdapterInitError(DataError):
+    """Raised when an adapter cannot be initialized safely."""

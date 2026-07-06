@@ -25,6 +25,8 @@ class DataConfig:
             resource_type = str(normalized.get("type", "")).strip()
             if not resource_type:
                 raise ValueError(f"data resource '{name}' requires type")
+            if resource_type == "sql" and not normalized.get("connection"):
+                raise ValueError(f"sql data resource '{name}' requires connection")
             capabilities = {
                 normalize_capability(item)
                 for item in normalized.get("capabilities", []) or []

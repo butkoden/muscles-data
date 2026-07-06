@@ -22,6 +22,43 @@ or require an explicit native-client escape hatch.
 - `SqlResourcePort` — bridge contract to SQL resources; SQL lifecycle remains in
   `muscles-sql` or a project adapter.
 
+## SQL Bridge
+
+`SqlResourcePort` exists so framework packages can ask for SQL as a named data
+resource without importing SQLAlchemy or duplicating `muscles-sql`:
+
+```python
+sql = runtime.require_port("sql.main", SqlResourcePort)
+with sql.session() as session:
+    ...
+```
+
+Supported methods:
+
+- `connection_name()`;
+- `session()`;
+- `session_factory()`;
+- `inspect()`;
+- `doctor()`.
+
+The port delegates to `SqlConnectionRegistry`. It does not expose repositories,
+Unit of Work, migrations, SQLAlchemy models or a universal query API.
+
+Config:
+
+```yaml
+data:
+  resources:
+    sql.main:
+      type: sql
+      connection: main
+      role: read_write
+```
+
+`connection` is required and must point to a named connection managed by
+`muscles-sql` or a compatible project registry. Diagnostics redact raw `url` and
+`dsn` fields while preserving already-safe fields such as `safe_url`.
+
 ## Lazy Runtime
 
 `DataRuntime` parses config and keeps resource handles. Adapter factories are
@@ -32,6 +69,9 @@ known at startup, but concrete adapters are created only by:
 - `runtime.doctor()` when health checks are enabled.
 
 This keeps framework package startup fast and safe.
+
+For SQL, registry resolution and health checks also remain lazy. `data.doctor`
+may call SQL inspect/health behavior, but `data.resources.list` does not.
 
 ## Diagnostics
 

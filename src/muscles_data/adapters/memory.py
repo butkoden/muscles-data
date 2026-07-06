@@ -7,7 +7,8 @@ from pathlib import PurePosixPath
 from typing import Any, Mapping
 
 from ..config import DataResourceConfig
-from ..models import DataCapability, HealthResult, InspectResult, ObjectBlob, ObjectInfo, SearchHit, VectorHit, WriteResult
+from ..errors import SqlConnectionMissingError, SqlRegistryMissingError
+from ..models import DataCapability, HealthResult, InspectResult, ObjectBlob, ObjectInfo, SearchHit, VectorHit, WriteResult, redact_mapping
 
 
 def _native_capability(config: DataResourceConfig) -> set[DataCapability]:
@@ -278,14 +279,61 @@ class InMemoryDocumentStoreAdapter(_MemoryAdapterBase):
 class SqlBridgeAdapter(_MemoryAdapterBase):
     resource_type = "sql"
 
+    def __init__(self, config: DataResourceConfig, *, registry_provider=None) -> None:
+        super().__init__(config)
+        self._registry_provider = registry_provider
+
     def connection_name(self) -> str:
         return str(self.config.options.get("connection", self.config.name))
 
     def session(self):
-        raise RuntimeError("SQL sessions are provided by muscles-sql adapters in a project runtime")
+        registry = self._registry()
+        try:
+            return registry.session(self.connection_name())
+        except Exception as exc:
+            raise SqlConnectionMissingError(f"Unknown SQL connection: {self.connection_name()}") from exc
+
+    def session_factory(self):
+        registry = self._registry()
+        try:
+            return registry.session_factory(self.connection_name())
+        except Exception as exc:
+            raise SqlConnectionMissingError(f"Unknown SQL connection: {self.connection_name()}") from exc
+
+    def inspect(self) -> Mapping[str, Any]:
+        registry = self._registry()
+        try:
+            report = registry.inspect(self.connection_name())
+        except Exception as exc:
+            raise SqlConnectionMissingError(f"Unknown SQL connection: {self.connection_name()}") from exc
+        return _redact_sql_report(report)
 
     def doctor(self) -> Mapping[str, Any]:
-        return {"status": "skipped", "reason": "bridge contract only"}
+        try:
+            report = self.inspect()
+        except SqlRegistryMissingError as exc:
+            return {"status": "failed", "message": str(exc)}
+        except SqlConnectionMissingError as exc:
+            return {"status": "failed", "message": str(exc)}
+        return {
+            "status": "ok" if report.get("status") == "ok" else "failed",
+            "message": report.get("message"),
+        }
+
+    def health(self) -> HealthResult:
+        doctor = self.doctor()
+        return HealthResult(status=str(doctor.get("status", "failed")), message=doctor.get("message"))
+
+    def native_client(self):
+        return self._registry()
+
+    def _registry(self):
+        if self._registry_provider is None:
+            raise SqlRegistryMissingError("SQL registry provider is not configured")
+        registry = self._registry_provider()
+        if registry is None:
+            raise SqlRegistryMissingError("SQL connection registry is not available")
+        return registry
 
 
 class InMemoryVectorFactory:
@@ -341,11 +389,14 @@ class InMemoryDocumentStoreFactory:
 class SqlBridgeFactory:
     resource_type = "sql"
 
+    def __init__(self, *, registry_provider=None) -> None:
+        self._registry_provider = registry_provider
+
     def capabilities(self, config: DataResourceConfig) -> set[DataCapability]:
         return {DataCapability.SQL_SESSION, DataCapability.HEALTHCHECK} | _native_capability(config)
 
     def create(self, config: DataResourceConfig) -> SqlBridgeAdapter:
-        return SqlBridgeAdapter(config)
+        return SqlBridgeAdapter(config, registry_provider=self._registry_provider)
 
 
 def _cosine(left: list[float], right: list[float]) -> float:
@@ -361,6 +412,19 @@ def _cosine(left: list[float], right: list[float]) -> float:
 
 def _matches(payload: Mapping[str, Any], filters: Mapping[str, Any]) -> bool:
     return all(payload.get(key) == value for key, value in filters.items())
+
+
+def _redact_sql_report(report: Mapping[str, Any]) -> dict[str, Any]:
+    redacted = redact_mapping(report)
+    original_connection = report.get("connection")
+    connection = redacted.get("connection")
+    if isinstance(connection, dict):
+        if isinstance(original_connection, Mapping) and "safe_url" in original_connection:
+            connection["safe_url"] = original_connection["safe_url"]
+        for key in ("url", "dsn"):
+            if key in connection:
+                connection[key] = "***"
+    return redacted
 
 
 def _normalize_object_key(key: str) -> str:
