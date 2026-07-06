@@ -127,15 +127,15 @@ data:
 
 The adapter packages are separate repositories and dependencies:
 
-| Resource type | Package | Port |
-| --- | --- | --- |
-| `elasticsearch` | `muscles-data-elasticsearch` | `SearchIndexPort` |
-| `opensearch` | `muscles-data-opensearch` | `SearchIndexPort` |
-| `redis` | `muscles-data-redis` | `KeyValuePort`, `LockPort`, `StreamPort` |
-| `qdrant` | `muscles-data-qdrant` | `VectorSearchPort` |
-| `mongodb` | `muscles-data-mongodb` | `DocumentStorePort` |
-| `s3` | `muscles-data-s3` | `ObjectStorePort` |
-| `sqlalchemy` | `muscles-data-sqlalchemy` | `SqlResourcePort` |
+| Resource type | Package | Port | Example |
+| --- | --- | --- | --- |
+| `elasticsearch` | [`muscles-data-elasticsearch`](https://github.com/butkoden/muscles-data-elasticsearch) | `SearchIndexPort` | [`example_data_elasticsearch_1`](https://github.com/butkoden/muscular-example/tree/master/example_data_elasticsearch_1) |
+| `opensearch` | [`muscles-data-opensearch`](https://github.com/butkoden/muscles-data-opensearch) | `SearchIndexPort` | [`example_data_opensearch_1`](https://github.com/butkoden/muscular-example/tree/master/example_data_opensearch_1) |
+| `redis` | [`muscles-data-redis`](https://github.com/butkoden/muscles-data-redis) | `KeyValuePort`, `LockPort`, `StreamPort` | [`example_data_redis_1`](https://github.com/butkoden/muscular-example/tree/master/example_data_redis_1) |
+| `qdrant` | [`muscles-data-qdrant`](https://github.com/butkoden/muscles-data-qdrant) | `VectorSearchPort` | [`example_data_qdrant_1`](https://github.com/butkoden/muscular-example/tree/master/example_data_qdrant_1) |
+| `mongodb` | [`muscles-data-mongodb`](https://github.com/butkoden/muscles-data-mongodb) | `DocumentStorePort` | [`example_data_mongodb_1`](https://github.com/butkoden/muscular-example/tree/master/example_data_mongodb_1) |
+| `s3` | [`muscles-data-s3`](https://github.com/butkoden/muscles-data-s3) | `ObjectStorePort` | [`example_data_s3_1`](https://github.com/butkoden/muscular-example/tree/master/example_data_s3_1) |
+| `sqlalchemy` | [`muscles-data-sqlalchemy`](https://github.com/butkoden/muscles-data-sqlalchemy) | `SqlResourcePort` | [`example_data_sqlalchemy_1`](https://github.com/butkoden/muscular-example/tree/master/example_data_sqlalchemy_1) |
 
 Register external factories in the project composition root:
 
@@ -262,16 +262,9 @@ PYTHONPATH=../muscles/src:src python3 examples/run_data_runtime.py
 PYTHONPATH=../muscles/src:src python3 examples/run_sql_resource_port.py
 ```
 
-Real backend examples live in `muscular-example` as
-`example_data_[adapter]_1` packages:
-
-- `example_data_elasticsearch_1`
-- `example_data_opensearch_1`
-- `example_data_redis_1`
-- `example_data_sqlalchemy_1`
-- `example_data_qdrant_1`
-- `example_data_mongodb_1`
-- `example_data_s3_1`
+Real backend examples live in
+[`muscular-example`](https://github.com/butkoden/muscular-example) as
+`example_data_[adapter]_1` packages.
 
 Run tests:
 

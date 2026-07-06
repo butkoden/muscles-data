@@ -102,13 +102,17 @@ Current adapter packages:
 
 | Package | Resource type | Port | Backend responsibility |
 | --- | --- | --- | --- |
-| `muscles-data-elasticsearch` | `elasticsearch` | `SearchIndexPort` | Elasticsearch full-text search, document upsert/delete, filters, highlights |
-| `muscles-data-opensearch` | `opensearch` | `SearchIndexPort` | OpenSearch full-text search, document upsert/delete, filters, highlights |
-| `muscles-data-redis` | `redis` | `KeyValuePort`, `LockPort`, `StreamPort` | Redis cache/key-value, locks and simple streams |
-| `muscles-data-qdrant` | `qdrant` | `VectorSearchPort` | Qdrant vector search, vector upsert/delete and payload filters |
-| `muscles-data-mongodb` | `mongodb` | `DocumentStorePort` | MongoDB document get/upsert/find/delete |
-| `muscles-data-s3` | `s3` | `ObjectStorePort` | S3-compatible object put/get/list/delete |
-| `muscles-data-sqlalchemy` | `sqlalchemy` | `SqlResourcePort` | Direct SQLAlchemy engine/session factory access through the SQL port |
+| [`muscles-data-elasticsearch`](https://github.com/butkoden/muscles-data-elasticsearch) | `elasticsearch` | `SearchIndexPort` | Elasticsearch full-text search, document upsert/delete, filters, highlights |
+| [`muscles-data-opensearch`](https://github.com/butkoden/muscles-data-opensearch) | `opensearch` | `SearchIndexPort` | OpenSearch full-text search, document upsert/delete, filters, highlights |
+| [`muscles-data-redis`](https://github.com/butkoden/muscles-data-redis) | `redis` | `KeyValuePort`, `LockPort`, `StreamPort` | Redis cache/key-value, locks and simple streams |
+| [`muscles-data-qdrant`](https://github.com/butkoden/muscles-data-qdrant) | `qdrant` | `VectorSearchPort` | Qdrant vector search, vector upsert/delete and payload filters |
+| [`muscles-data-mongodb`](https://github.com/butkoden/muscles-data-mongodb) | `mongodb` | `DocumentStorePort` | MongoDB document get/upsert/find/delete |
+| [`muscles-data-s3`](https://github.com/butkoden/muscles-data-s3) | `s3` | `ObjectStorePort` | S3-compatible object put/get/list/delete |
+| [`muscles-data-sqlalchemy`](https://github.com/butkoden/muscles-data-sqlalchemy) | `sqlalchemy` | `SqlResourcePort` | Direct SQLAlchemy engine/session factory access through the SQL port |
+
+Executable examples live in
+[`muscular-example`](https://github.com/butkoden/muscular-example) under
+`example_data_[adapter]_1`.
 
 Each adapter owns:
 
