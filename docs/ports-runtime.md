@@ -22,6 +22,51 @@ or require an explicit native-client escape hatch.
 - `SqlResourcePort` — bridge contract to SQL resources; SQL lifecycle remains in
   `muscles-sql` or a project adapter.
 
+## Elasticsearch Search Adapter
+
+`type: elasticsearch` is the built-in optional adapter for `SearchIndexPort`:
+
+```python
+search = runtime.require_port("search.docs", SearchIndexPort)
+hits = search.search_text("postgres kafka", filters={"section": "docs"}, limit=5)
+```
+
+Config:
+
+```yaml
+data:
+  resources:
+    search.docs:
+      type: elasticsearch
+      url: ${ELASTICSEARCH_URL}
+      api_key: ${ELASTICSEARCH_API_KEY}
+      index: docs
+      timeout: 3
+      verify_certs: true
+```
+
+The adapter owns lazy client creation, index name binding, metadata filter
+translation, BM25/full-text search, document upsert/delete, highlight passthrough
+when requested, health checks and safe diagnostics. It does not own analyzers,
+mappings, document parsing, embeddings, RAG orchestration or reranking.
+
+Filter mapping is intentionally small and deterministic:
+
+- scalar value -> `term` on `metadata.<field>`;
+- list/tuple/set -> `terms`;
+- `gt`, `gte`, `lt`, `lte` mapping -> `range`;
+- `$and`, `$or`, `$not` -> boolean groups.
+
+`search_text(..., options={"highlight": True})` requests highlights for the
+configured text field and returns them on `SearchHit.highlights`.
+`upsert_documents()` writes `id`, `text`, and optional `metadata`/`payload`.
+`delete_documents()` accepts ids or filters.
+
+Diagnostics redact `url`, `api_key`, password and auth fields. `data.doctor`
+checks client ping and index availability, while `data.resources.list` does not
+create a client. Native Elasticsearch access is available only when
+`native_client: true` is set and should remain an advanced project escape hatch.
+
 ## Qdrant Vector Adapter
 
 `type: qdrant` is the built-in optional adapter for `VectorSearchPort`:
@@ -161,6 +206,9 @@ may call SQL inspect/health behavior, but `data.resources.list` does not.
 
 For direct SQLAlchemy resources, engine creation also remains lazy. Listing and
 initial package setup do not open database connections.
+
+For Elasticsearch, the real client is also lazy. It is created only by search,
+index/delete operations, explicit native access or `data.doctor`.
 
 For Qdrant, the real client is also lazy. It is created only by vector
 operations, explicit native access or `data.doctor`.

@@ -63,6 +63,13 @@ data:
     search.docs:
       type: memory_search
 
+    search.elastic:
+      type: elasticsearch
+      url: ${ELASTICSEARCH_URL}
+      api_key: ${ELASTICSEARCH_API_KEY}
+      index: docs
+      timeout: 3
+
     cache.default:
       type: memory_kv
 
@@ -86,9 +93,9 @@ data:
 
 Real backend adapters are added as optional adapter modules/factories. The core
 package does not import OpenSearch, Elasticsearch, Redis, MongoDB, S3 or
-SQLAlchemy clients at package import time. Qdrant and SQLAlchemy support live in
-optional adapter modules and import their vendor clients only when a matching
-resource is used.
+SQLAlchemy clients at package import time. Elasticsearch, Qdrant and SQLAlchemy
+support live in optional adapter modules and import their vendor clients only
+when a matching resource is used.
 
 ### Qdrant Vector Resources
 
@@ -137,6 +144,57 @@ Supported filters map deterministic payload conditions to Qdrant:
 `upsert_vectors()` accepts items with `id`, `vector` and optional `payload`.
 `delete_vectors()` accepts either ids or filters. The adapter does not create
 embeddings, design payload schemas or manage collection migrations.
+
+### Elasticsearch Search Resources
+
+`type: elasticsearch` implements `SearchIndexPort` over an Elasticsearch index:
+
+```yaml
+data:
+  resources:
+    search.docs:
+      type: elasticsearch
+      url: ${ELASTICSEARCH_URL}
+      api_key: ${ELASTICSEARCH_API_KEY}
+      index: docs
+      timeout: 3
+      verify_certs: true
+```
+
+Install the optional client in projects that use the real adapter:
+
+```bash
+python -m pip install 'muscles-data[elasticsearch]'
+```
+
+Use it through the port:
+
+```python
+from muscles_data.ports import SearchIndexPort
+
+search = runtime.require_port("search.docs", SearchIndexPort)
+hits = search.search_text(
+    "postgres kafka",
+    filters={"section": "experience", "year": {"gte": 2024}},
+    limit=10,
+    options={"highlight": True},
+)
+```
+
+Capabilities are `keyword_search`, `document_index` and `healthcheck`; add
+`native_client: true` only for advanced project-specific Elasticsearch
+operations. Supported filters map deterministic metadata conditions to
+Elasticsearch bool filters:
+
+- `{"field": "value"}` -> `term` on `metadata.field`;
+- `{"field": ["a", "b"]}` -> `terms`;
+- `{"year": {"gte": 2024, "lt": 2026}}` -> `range`;
+- `$and`, `$or`, `$not` -> boolean groups.
+
+`upsert_documents()` accepts items with `id`, `text`, and optional `metadata` or
+`payload`. `delete_documents()` accepts either ids or filters. The adapter does
+not own analyzers, mappings, document parsing, embeddings, RAG logic or
+reranking.
 
 ### SQL Resources
 
@@ -248,6 +306,10 @@ For SQLAlchemy resources, `data.resources.list` also remains lazy and does not
 create an engine. The engine is created by `SqlResourcePort.session()`,
 `session_factory()`, explicit native access or `data.doctor`.
 
+For Elasticsearch resources, `data.resources.list` and package initialization do
+not create a client. The client is created lazily on search/index/delete
+operations, explicit native access or `data.doctor`.
+
 For Qdrant resources, `data.resources.list` and package initialization do not
 create a Qdrant client. The client is created lazily on vector operations,
 explicit native access or `data.doctor`.
@@ -282,6 +344,10 @@ For Qdrant resources, the native handle is the underlying `QdrantClient`.
 Prefer `VectorSearchPort`; use native access only for backend-specific
 operations that cannot be represented by the port.
 
+For Elasticsearch resources, the native handle is the underlying Elasticsearch
+client. Prefer `SearchIndexPort`; use native access only for index settings,
+mappings or backend-specific operations that do not belong in the narrow port.
+
 ## Actions
 
 - `data.resources.list` — list configured resources, capabilities and lazy init
@@ -309,6 +375,7 @@ Run the local smoke example:
 
 ```bash
 PYTHONPATH=../muscles/src:src python3 examples/run_data_runtime.py
+PYTHONPATH=../muscles/src:src python3 examples/run_elasticsearch_search_port.py
 PYTHONPATH=../muscles/src:src python3 examples/run_sql_resource_port.py
 PYTHONPATH=../muscles/src:src python3 examples/run_sqlalchemy_resource_port.py
 PYTHONPATH=../muscles/src:src python3 examples/run_qdrant_vector_port.py

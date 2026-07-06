@@ -84,6 +84,7 @@ class SearchHit:
     score: float
     text: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
+    highlights: dict[str, list[str]] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

@@ -63,3 +63,23 @@ class SqlAlchemyClientMissingError(SqlAlchemyAdapterError):
 
 class SqlAlchemyConnectionError(SqlAlchemyAdapterError):
     """Raised when a SQLAlchemy engine/session operation fails."""
+
+
+class ElasticsearchAdapterError(DataError):
+    """Base error for Elasticsearch search adapter failures."""
+
+
+class ElasticsearchConfigError(ValueError, ElasticsearchAdapterError):
+    """Raised when an Elasticsearch resource config cannot be mapped safely."""
+
+
+class ElasticsearchClientMissingError(ElasticsearchAdapterError):
+    """Raised when Elasticsearch adapter is used without an available client."""
+
+
+class ElasticsearchConnectionError(ElasticsearchAdapterError):
+    """Raised when an Elasticsearch operation cannot reach or use the backend."""
+
+
+class ElasticsearchFilterError(ElasticsearchAdapterError):
+    """Raised when a data filter cannot be translated to Elasticsearch."""

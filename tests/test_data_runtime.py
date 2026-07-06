@@ -16,12 +16,16 @@ from muscles_data.adapters.memory import (
     InMemoryVectorAdapter,
     SqlBridgeFactory,
 )
+from muscles_data.adapters.elasticsearch import ElasticsearchSearchFactory, elasticsearch_filter_from_mapping
 from muscles_data.adapters.qdrant import QdrantVectorFactory, qdrant_filter_from_mapping
 from muscles_data.adapters.sqlalchemy import SqlAlchemySqlResourceFactory
 from muscles_data.catalog import DataAdapterCatalog
 from muscles_data.config import DataConfig
 from muscles_data.errors import (
     DataCapabilityError,
+    ElasticsearchClientMissingError,
+    ElasticsearchConnectionError,
+    ElasticsearchFilterError,
     QdrantClientMissingError,
     QdrantConnectionError,
     QdrantDimensionError,
@@ -190,6 +194,70 @@ class FakeQdrantModels:
             self.filter = filter
 
 
+class FakeElasticsearchIndices:
+    def __init__(self, client: "FakeElasticsearchClient") -> None:
+        self.client = client
+
+    def exists(self, *, index: str) -> bool:
+        self.client.index_checks.append(index)
+        if self.client.fail_health:
+            raise TimeoutError("elastic password=secret timed out")
+        return index == self.client.index_name
+
+
+class FakeElasticsearchClient:
+    def __init__(self, *, fail_health: bool = False) -> None:
+        self.fail_health = fail_health
+        self.index_name = "docs"
+        self.searches: list[dict[str, Any]] = []
+        self.indexes: list[dict[str, Any]] = []
+        self.deletes: list[dict[str, Any]] = []
+        self.delete_queries: list[dict[str, Any]] = []
+        self.index_checks: list[str] = []
+        self.closed = False
+        self.indices = FakeElasticsearchIndices(self)
+
+    def search(self, **kwargs):
+        self.searches.append(kwargs)
+        return {
+            "hits": {
+                "hits": [
+                    {
+                        "_id": "doc-1",
+                        "_score": 4.2,
+                        "_source": {"text": "Muscles data ports", "metadata": {"section": "docs"}},
+                        "highlight": {"text": ["<em>Muscles</em> data ports"]},
+                    },
+                    {
+                        "_id": "doc-2",
+                        "_score": 1.1,
+                        "_source": {"text": "Other note", "metadata": {"section": "notes"}},
+                    },
+                ]
+            }
+        }
+
+    def index(self, **kwargs):
+        self.indexes.append(kwargs)
+        return {"result": "created"}
+
+    def delete(self, **kwargs):
+        self.deletes.append(kwargs)
+        return {"result": "deleted"}
+
+    def delete_by_query(self, **kwargs):
+        self.delete_queries.append(kwargs)
+        return {"deleted": 3}
+
+    def ping(self) -> bool:
+        if self.fail_health:
+            raise TimeoutError("elastic password=secret timed out")
+        return True
+
+    def close(self) -> None:
+        self.closed = True
+
+
 def _config() -> dict[str, Any]:
     return {
         "data": {
@@ -235,6 +303,24 @@ def _sqlalchemy_config(url: str = "sqlite:///:memory:") -> dict[str, Any]:
                     "role": "read_write",
                     "echo": False,
                     "pool_pre_ping": True,
+                    "native_client": True,
+                }
+            }
+        }
+    }
+
+
+def _elasticsearch_config(url: str = "https://elastic.example") -> dict[str, Any]:
+    return {
+        "data": {
+            "resources": {
+                "search.elastic": {
+                    "type": "elasticsearch",
+                    "url": url,
+                    "api_key": "elastic-secret",
+                    "index": "docs",
+                    "timeout": 1.5,
+                    "verify_certs": True,
                     "native_client": True,
                 }
             }
@@ -290,6 +376,16 @@ def test_qdrant_resource_config_requires_url_and_collection():
 
     with pytest.raises(ValueError, match="requires collection"):
         DataConfig.from_raw({"data": {"resources": {"vector.qdrant": {"type": "qdrant", "url": "http://localhost:6333"}}}})
+
+
+def test_elasticsearch_resource_config_requires_url_and_index():
+    assert DataConfig.from_raw(_elasticsearch_config()).resources["search.elastic"].type == "elasticsearch"
+
+    with pytest.raises(ValueError, match="requires url"):
+        DataConfig.from_raw({"data": {"resources": {"search.elastic": {"type": "elasticsearch", "index": "docs"}}}})
+
+    with pytest.raises(ValueError, match="requires index"):
+        DataConfig.from_raw({"data": {"resources": {"search.elastic": {"type": "elasticsearch", "url": "http://localhost:9200"}}}})
 
 
 def test_runtime_lazy_initialization_and_capability_mismatch():
@@ -572,6 +668,139 @@ def test_sqlalchemy_adapter_rejects_unknown_options_and_missing_client():
         missing_client_runtime.require_port("sql.local", SqlResourcePort).session()
 
 
+def test_elasticsearch_search_port_is_registered_lazy_and_maps_operations():
+    client = FakeElasticsearchClient()
+    runtime = DataRuntime(
+        config=DataConfig.from_raw(_elasticsearch_config()),
+        catalog=DataAdapterCatalog.with_defaults(elasticsearch_client_factory=lambda _config: client),
+    )
+
+    listed = runtime.list_resources()
+    elastic = next(item for item in listed if item["name"] == "search.elastic")
+    inspected_before = runtime.inspect_resource("search.elastic")
+
+    assert elastic["type"] == "elasticsearch"
+    assert {"keyword_search", "document_index"} <= set(elastic["capabilities"])
+    assert "native_client" not in elastic["capabilities"]
+    assert elastic["initialized"] is False
+    assert inspected_before["initialized"] is False
+    assert inspected_before["options"]["url"] == "***"
+    assert inspected_before["options"]["api_key"] == "***"
+    assert DataAdapterCatalog.with_defaults().has_factory(ElasticsearchSearchFactory.resource_type)
+
+    search = runtime.require_port("search.elastic", SearchIndexPort)
+    hits = search.search_text(
+        "muscles",
+        filters={"section": "docs", "year": {"gte": 2024}},
+        limit=2,
+        options={"highlight": True},
+    )
+    write = search.upsert_documents(
+        [
+            {"id": "doc-1", "text": "Muscles data ports", "metadata": {"section": "docs"}},
+            {"id": "doc-2", "text": "Other note", "payload": {"section": "notes"}},
+        ],
+        options={"refresh": True},
+    )
+    deleted_ids = search.delete_documents(ids=["doc-2"], options={"refresh": True})
+    deleted_filter = search.delete_documents(filters={"section": ["docs", "notes"]})
+
+    assert [hit.id for hit in hits] == ["doc-1", "doc-2"]
+    assert hits[0].score == pytest.approx(4.2)
+    assert hits[0].text == "Muscles data ports"
+    assert hits[0].metadata["section"] == "docs"
+    assert hits[0].highlights["text"] == ["<em>Muscles</em> data ports"]
+    assert client.searches[0]["index"] == "docs"
+    assert client.searches[0]["size"] == 2
+    assert client.searches[0]["query"]["bool"]["must"] == [{"match": {"text": {"query": "muscles"}}}]
+    assert {"term": {"metadata.section": "docs"}} in client.searches[0]["query"]["bool"]["filter"]
+    assert {"range": {"metadata.year": {"gte": 2024}}} in client.searches[0]["query"]["bool"]["filter"]
+    assert client.searches[0]["highlight"] == {"fields": {"text": {}}}
+    assert write.written == 2
+    assert client.indexes[0]["index"] == "docs"
+    assert client.indexes[0]["id"] == "doc-1"
+    assert client.indexes[0]["document"] == {"text": "Muscles data ports", "metadata": {"section": "docs"}}
+    assert client.indexes[0]["refresh"] is True
+    assert client.indexes[1]["document"]["metadata"] == {"section": "notes"}
+    assert deleted_ids.deleted == 1
+    assert client.deletes[0] == {"index": "docs", "id": "doc-2", "refresh": True}
+    assert deleted_filter.deleted == 3
+    assert client.delete_queries[0]["query"]["bool"]["filter"][0] == {"terms": {"metadata.section": ["docs", "notes"]}}
+
+    native = runtime.require_resource("search.elastic", DataCapability.NATIVE_CLIENT).native_client()
+    assert native is client
+    assert client.index_checks == []
+
+
+def test_elasticsearch_filter_translation_is_deterministic_and_rejects_unknown_operators():
+    translated = elasticsearch_filter_from_mapping(
+        {
+            "$or": [{"section": "docs"}, {"section": "notes"}],
+            "$not": {"archived": True},
+            "score": {"gt": 0.5, "lte": 0.9},
+        }
+    )
+
+    assert translated[0] == {
+        "bool": {
+            "should": [{"term": {"metadata.section": "docs"}}, {"term": {"metadata.section": "notes"}}],
+            "minimum_should_match": 1,
+        }
+    }
+    assert translated[1] == {"bool": {"must_not": [{"term": {"metadata.archived": True}}]}}
+    assert translated[2] == {"range": {"metadata.score": {"gt": 0.5, "lte": 0.9}}}
+
+    with pytest.raises(ElasticsearchFilterError, match="Unsupported Elasticsearch filter operator"):
+        elasticsearch_filter_from_mapping({"score": {"near": 1.0}})
+
+
+def test_elasticsearch_inspect_doctor_close_and_safe_failures():
+    client = FakeElasticsearchClient()
+    runtime = DataRuntime(
+        config=DataConfig.from_raw(_elasticsearch_config()),
+        catalog=DataAdapterCatalog.with_defaults(elasticsearch_client_factory=lambda _config: client),
+    )
+
+    inspect_before = runtime.inspect_resource("search.elastic")
+    assert inspect_before["initialized"] is False
+    assert inspect_before["options"]["url"] == "***"
+    assert inspect_before["options"]["api_key"] == "***"
+
+    doctor = runtime.doctor()
+    elastic_checks = [check for check in doctor["checks"] if check["resource"] == "search.elastic"]
+
+    assert elastic_checks[0]["status"] == "ok"
+    assert client.index_checks == ["docs"]
+    assert "elastic-secret" not in repr(doctor)
+    assert runtime.close()["status"] == "ok"
+    assert client.closed is True
+
+    missing_client_runtime = DataRuntime(
+        config=DataConfig.from_raw(_elasticsearch_config()),
+        catalog=DataAdapterCatalog.with_defaults(elasticsearch_client_factory=lambda _config: None),
+    )
+    with pytest.raises(ElasticsearchClientMissingError):
+        missing_client_runtime.require_port("search.elastic", SearchIndexPort).search_text("x")
+
+    failing_runtime = DataRuntime(
+        config=DataConfig.from_raw(_elasticsearch_config("https://user:secret@elastic.example")),
+        catalog=DataAdapterCatalog.with_defaults(elasticsearch_client_factory=lambda _config: FakeElasticsearchClient(fail_health=True)),
+    )
+    failing_doctor = failing_runtime.doctor()
+    assert failing_doctor["status"] == "failed"
+    assert [check for check in failing_doctor["checks"] if check["resource"] == "search.elastic"][0]["status"] == "failed"
+    assert "secret" not in repr(failing_doctor)
+
+    bad_client = FakeElasticsearchClient()
+    bad_client.search = lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("network unavailable"))
+    bad_runtime = DataRuntime(
+        config=DataConfig.from_raw(_elasticsearch_config()),
+        catalog=DataAdapterCatalog.with_defaults(elasticsearch_client_factory=lambda _config: bad_client),
+    )
+    with pytest.raises(ElasticsearchConnectionError, match="network unavailable"):
+        bad_runtime.require_port("search.elastic", SearchIndexPort).search_text("x")
+
+
 def test_qdrant_vector_port_is_registered_lazy_and_maps_operations():
     client = FakeQdrantClient()
     catalog = DataAdapterCatalog.with_defaults(
@@ -716,13 +945,17 @@ def test_data_source_does_not_import_vendor_or_ai_packages():
     core_text = "\n".join(
         path.read_text(encoding="utf-8")
         for path in source_root.rglob("*.py")
-        if path.name not in {"qdrant.py", "sqlalchemy.py"}
+        if path.name not in {"elasticsearch.py", "qdrant.py", "sqlalchemy.py"}
     )
 
-    for marker in ("muscles_ai", "muscles_otel", "elasticsearch", "opensearch", "redis", "pymongo", "boto3"):
+    for marker in ("muscles_ai", "muscles_otel", "opensearch", "redis", "pymongo", "boto3"):
         assert marker not in core_text
+    assert "import elasticsearch" not in core_text
+    assert "from elasticsearch" not in core_text
     assert "import sqlalchemy" not in core_text
     assert "from sqlalchemy" not in core_text
+    elasticsearch_source = source_root / "adapters" / "elasticsearch.py"
+    assert "from elasticsearch" not in elasticsearch_source.read_text(encoding="utf-8")
     qdrant_source = source_root / "adapters" / "qdrant.py"
     assert "from qdrant_client" not in qdrant_source.read_text(encoding="utf-8")
     sqlalchemy_source = source_root / "adapters" / "sqlalchemy.py"
