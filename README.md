@@ -89,7 +89,11 @@ data:
       stream_group: workers
 
     objects.docs:
-      type: memory_object
+      type: s3
+      endpoint_url: ${S3_ENDPOINT}
+      bucket: documents
+      prefix: raw
+      max_keys: 100
 
     mongo.content:
       type: mongodb
@@ -119,8 +123,9 @@ Redis support is a separate optional adapter around `redis-py` for key-value,
 cache, lock and simple stream use cases.
 
 New vendor adapters can also live in separate packages. MongoDB support is
-provided by `muscles-data-mongodb`: install/register that package in the
-project composition root, then keep application code on `DocumentStorePort`.
+provided by `muscles-data-mongodb`, and S3-compatible object storage is
+provided by `muscles-data-s3`: install/register those packages in the project
+composition root, then keep application code on typed ports.
 
 ### Qdrant Vector Resources
 
@@ -322,6 +327,45 @@ creation, retry policy, job semantics and message schema.
 The adapter does not own business cache schema, distributed transactions,
 serialization policy beyond bytes/Redis values, or a job framework.
 
+### S3 Object Resources
+
+S3-compatible storage is intentionally provided as an external adapter package,
+`muscles-data-s3`, so `muscles-data` core does not depend on boto3:
+
+```yaml
+data:
+  resources:
+    objects.docs:
+      type: s3
+      endpoint_url: ${S3_ENDPOINT}
+      bucket: documents
+      region_name: us-east-1
+      prefix: raw
+      max_keys: 100
+```
+
+Register the external factory in the project:
+
+```python
+from muscles_data.catalog import DataAdapterCatalog
+from muscles_data.ports import ObjectStorePort
+from muscles_data_s3 import S3ObjectStoreFactory
+
+catalog = DataAdapterCatalog.with_defaults()
+catalog.register(S3ObjectStoreFactory())
+
+objects = runtime.require_port("objects.docs", ObjectStorePort)
+```
+
+`ObjectStorePort` provides simple `put_object()`, `get_object()`,
+`list_objects()` and `delete_object()` operations over bytes. The adapter
+normalizes public keys, applies optional `prefix` when storing objects and
+returns keys without that configured prefix to consumers. Presigned URLs,
+multipart upload details, bucket policies, lifecycle rules and business storage
+schemas remain project responsibilities. Native S3 access is available only
+when the resource declares `native_client: true`; use it as an advanced escape
+hatch for backend-specific operations.
+
 ### MongoDB Document Resources
 
 MongoDB is intentionally provided as an external adapter package,
@@ -480,6 +524,10 @@ For Redis resources, `data.resources.list` and package initialization do not
 create a client. The client is created lazily on key-value, lock, stream,
 explicit native access or `data.doctor` operations.
 
+For S3 resources from `muscles-data-s3`, `data.resources.list` and package
+initialization do not create a boto3 client. The client is created lazily on
+object put/get/list/delete operations, explicit native access or `data.doctor`.
+
 For Qdrant resources, `data.resources.list` and package initialization do not
 create a Qdrant client. The client is created lazily on vector operations,
 explicit native access or `data.doctor`.
@@ -525,6 +573,11 @@ backend-specific operations that do not belong in the narrow port.
 For Redis resources, the native handle is the underlying Redis client. Prefer
 `KeyValuePort`, `LockPort` and `StreamPort`; use native access only for
 backend-specific operations that do not belong in the narrow ports.
+
+For S3 resources from `muscles-data-s3`, the native handle is the underlying
+boto3 S3 client. Prefer `ObjectStorePort`; use native access only for presigned
+URLs, multipart upload configuration, lifecycle policies or backend-specific
+operations that do not belong in the narrow port.
 
 For MongoDB resources from `muscles-data-mongodb`, the native handle is the
 underlying PyMongo `MongoClient`. Prefer `DocumentStorePort`; use native access

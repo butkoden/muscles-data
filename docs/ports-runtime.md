@@ -320,6 +320,10 @@ index/delete operations, explicit native access or `data.doctor`.
 For Redis, the real client is also lazy. It is created only by key-value, lock,
 stream operations, explicit native access or `data.doctor`.
 
+For S3 resources from `muscles-data-s3`, the real boto3 client is also lazy. It
+is created only by object put/get/list/delete operations, explicit native access
+or `data.doctor`.
+
 For Qdrant, the real client is also lazy. It is created only by vector
 operations, explicit native access or `data.doctor`.
 
@@ -353,12 +357,15 @@ Vendor adapters that would pull extra dependencies can live outside
 
 ```python
 from muscles_data.catalog import DataAdapterCatalog
-from muscles_data.ports import DocumentStorePort
+from muscles_data.ports import DocumentStorePort, ObjectStorePort
 from muscles_data_mongodb import MongoDocumentStoreFactory
+from muscles_data_s3 import S3ObjectStoreFactory
 
 catalog = DataAdapterCatalog.with_defaults()
 catalog.register(MongoDocumentStoreFactory())
+catalog.register(S3ObjectStoreFactory())
 store = runtime.require_port("mongo.content", DocumentStorePort)
+objects = runtime.require_port("objects.docs", ObjectStorePort)
 ```
 
 For MongoDB, `muscles-data-mongodb` owns the PyMongo dependency, lazy client
@@ -367,3 +374,10 @@ creation, database binding, simple document operations and safe diagnostics.
 registration mechanism. Complex aggregations, indexes, migrations and schema
 validation remain project-level concerns or explicit native-client escape
 hatches.
+
+For S3-compatible storage, `muscles-data-s3` owns the boto3 dependency, lazy
+client creation, bucket binding, key prefix mapping, object operations and safe
+diagnostics. `muscles-data` owns only `ObjectStorePort`, runtime capability
+checks and the registration mechanism. Presigned URLs, multipart upload details,
+bucket policies, lifecycle rules and storage schemas remain project-level
+concerns or explicit native-client escape hatches.
