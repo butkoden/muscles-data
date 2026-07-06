@@ -27,6 +27,8 @@ class DataConfig:
                 raise ValueError(f"data resource '{name}' requires type")
             if resource_type == "sql" and not normalized.get("connection"):
                 raise ValueError(f"sql data resource '{name}' requires connection")
+            if resource_type == "sqlalchemy" and not normalized.get("url"):
+                raise ValueError(f"sqlalchemy data resource '{name}' requires url")
             if resource_type == "qdrant":
                 if not normalized.get("url"):
                     raise ValueError(f"qdrant data resource '{name}' requires url")

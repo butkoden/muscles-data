@@ -41,6 +41,7 @@ class DataAdapterCatalog:
         cls,
         *,
         sql_registry_provider=None,
+        sqlalchemy_provider=None,
         qdrant_client_factory=None,
         qdrant_models_provider=None,
     ) -> "DataAdapterCatalog":
@@ -53,6 +54,7 @@ class DataAdapterCatalog:
             SqlBridgeFactory,
         )
         from .adapters.qdrant import QdrantVectorFactory
+        from .adapters.sqlalchemy import SqlAlchemySqlResourceFactory
 
         catalog = cls()
         for factory in (
@@ -63,6 +65,7 @@ class DataAdapterCatalog:
             InMemoryKeyValueFactory(),
             InMemoryDocumentStoreFactory(),
             SqlBridgeFactory(registry_provider=sql_registry_provider),
+            SqlAlchemySqlResourceFactory(sqlalchemy_provider=sqlalchemy_provider),
         ):
             catalog.register(factory)
         return catalog

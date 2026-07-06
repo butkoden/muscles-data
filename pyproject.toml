@@ -17,6 +17,9 @@ dependencies = [
 qdrant = [
   "qdrant-client>=1.10",
 ]
+sqlalchemy = [
+  "SQLAlchemy>=2.0",
+]
 dev = [
   "pytest>=8.0,<9.0",
 ]

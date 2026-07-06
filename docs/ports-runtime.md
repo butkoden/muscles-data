@@ -62,6 +62,52 @@ availability, while `data.resources.list` does not create a client. Native
 Qdrant access is available only when `native_client: true` is set and should
 remain an advanced project escape hatch.
 
+## SQLAlchemy Direct Adapter
+
+`type: sqlalchemy` implements the same `SqlResourcePort` directly over a
+SQLAlchemy engine:
+
+```yaml
+data:
+  resources:
+    sql.local:
+      type: sqlalchemy
+      url: sqlite:///:memory:
+      name: local_sqlite
+      pool_pre_ping: true
+      native_client: false
+```
+
+The adapter imports SQLAlchemy lazily and creates the engine only when the port
+is used, native access is requested or `data.doctor` runs. It supports:
+
+- `connection_name()`;
+- `session()`;
+- `session_factory()`;
+- `inspect()`;
+- `doctor()`;
+- `close()`.
+
+Allowed engine options are intentionally narrow: `echo`, `pool_pre_ping`,
+`pool_size`, `max_overflow`, `connect_args` and `future`. Unknown options fail
+fast with a config error so project-specific connection behavior stays explicit.
+
+The adapter does not add repositories, Unit of Work, migrations, ORM model
+registration or a generic SQL query language. A project can build those layers
+on top of the SQLAlchemy session it gets from `SqlResourcePort`.
+
+Native SQLAlchemy access is available only with `native_client: true`:
+
+```python
+native = runtime.require_resource("sql.local", DataCapability.NATIVE_CLIENT).native_client()
+engine = native["engine"]
+session_factory = native["session_factory"]
+```
+
+Use this only for project-specific operations that do not belong in the narrow
+port. Diagnostics redact `url` and never include the native engine/session
+objects.
+
 ## SQL Bridge
 
 `SqlResourcePort` exists so framework packages can ask for SQL as a named data
@@ -112,6 +158,9 @@ This keeps framework package startup fast and safe.
 
 For SQL, registry resolution and health checks also remain lazy. `data.doctor`
 may call SQL inspect/health behavior, but `data.resources.list` does not.
+
+For direct SQLAlchemy resources, engine creation also remains lazy. Listing and
+initial package setup do not open database connections.
 
 For Qdrant, the real client is also lazy. It is created only by vector
 operations, explicit native access or `data.doctor`.

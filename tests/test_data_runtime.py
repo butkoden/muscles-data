@@ -17,6 +17,7 @@ from muscles_data.adapters.memory import (
     SqlBridgeFactory,
 )
 from muscles_data.adapters.qdrant import QdrantVectorFactory, qdrant_filter_from_mapping
+from muscles_data.adapters.sqlalchemy import SqlAlchemySqlResourceFactory
 from muscles_data.catalog import DataAdapterCatalog
 from muscles_data.config import DataConfig
 from muscles_data.errors import (
@@ -25,6 +26,8 @@ from muscles_data.errors import (
     QdrantConnectionError,
     QdrantDimensionError,
     QdrantFilterError,
+    SqlAlchemyClientMissingError,
+    SqlAlchemyConnectionError,
     SqlConnectionMissingError,
     SqlRegistryMissingError,
 )
@@ -222,6 +225,23 @@ def _qdrant_config() -> dict[str, Any]:
     }
 
 
+def _sqlalchemy_config(url: str = "sqlite:///:memory:") -> dict[str, Any]:
+    return {
+        "data": {
+            "resources": {
+                "sql.local": {
+                    "type": "sqlalchemy",
+                    "url": url,
+                    "role": "read_write",
+                    "echo": False,
+                    "pool_pre_ping": True,
+                    "native_client": True,
+                }
+            }
+        }
+    }
+
+
 def test_config_parser_accepts_resources_and_redacts_secrets():
     config = DataConfig.from_raw(_config())
 
@@ -253,6 +273,13 @@ def test_catalog_rejects_duplicate_factory():
 def test_sql_resource_config_requires_connection():
     with pytest.raises(ValueError, match="requires connection"):
         DataConfig.from_raw({"data": {"resources": {"sql.main": {"type": "sql"}}}})
+
+
+def test_sqlalchemy_resource_config_requires_url():
+    assert DataConfig.from_raw(_sqlalchemy_config()).resources["sql.local"].type == "sqlalchemy"
+
+    with pytest.raises(ValueError, match="requires url"):
+        DataConfig.from_raw({"data": {"resources": {"sql.local": {"type": "sqlalchemy"}}}})
 
 
 def test_qdrant_resource_config_requires_url_and_collection():
@@ -458,6 +485,93 @@ def test_sql_doctor_handles_partial_failure_safely():
     assert "secret" not in repr(doctor)
 
 
+def test_sqlalchemy_port_is_registered_lazy_and_exposes_sessions():
+    sqlalchemy = pytest.importorskip("sqlalchemy")
+    runtime = DataRuntime(config=DataConfig.from_raw(_sqlalchemy_config()), catalog=DataAdapterCatalog.with_defaults())
+
+    listed = runtime.list_resources()
+    sql_resource = next(item for item in listed if item["name"] == "sql.local")
+    inspected_before = runtime.inspect_resource("sql.local")
+
+    assert sql_resource["type"] == "sqlalchemy"
+    assert "sql_session" in sql_resource["capabilities"]
+    assert "native_client" not in sql_resource["capabilities"]
+    assert sql_resource["initialized"] is False
+    assert inspected_before["initialized"] is False
+    assert inspected_before["options"]["url"] == "***"
+    assert DataAdapterCatalog.with_defaults().has_factory(SqlAlchemySqlResourceFactory.resource_type)
+
+    sql = runtime.require_port("sql.local", SqlResourcePort)
+
+    assert sql.connection_name() == "sql.local"
+    assert runtime.inspect_resource("sql.local")["initialized"] is True
+    with sql.session() as session:
+        session.execute(sqlalchemy.text("create table notes (id integer primary key, title varchar)"))
+        session.execute(sqlalchemy.text("insert into notes (title) values ('typed port')"))
+        rows = session.execute(sqlalchemy.text("select title from notes")).fetchall()
+        session.commit()
+
+    assert [row[0] for row in rows] == ["typed port"]
+    assert sql.session_factory() is sql.session_factory()
+    native = runtime.require_resource("sql.local", DataCapability.NATIVE_CLIENT).native_client()
+    assert {"engine", "session_factory"} <= set(native)
+    assert sql.inspect()["details"]["backend"] == "sqlalchemy"
+    assert sql.doctor()["status"] == "ok"
+
+    assert runtime.close()["status"] == "ok"
+    assert runtime.close()["status"] == "ok"
+
+
+def test_sqlalchemy_adapter_redacts_dsn_and_reports_safe_failures():
+    runtime = DataRuntime(
+        config=DataConfig.from_raw(
+            _sqlalchemy_config("missingdialect://user:secret@localhost/app")
+        ),
+        catalog=DataAdapterCatalog.with_defaults(),
+    )
+
+    inspected = runtime.inspect_resource("sql.local")
+    assert inspected["options"]["url"] == "***"
+    assert "secret" not in repr(inspected)
+
+    doctor = runtime.doctor()
+    assert doctor["status"] == "failed"
+    assert "secret" not in repr(doctor)
+
+    sql = runtime.require_port("sql.local", SqlResourcePort)
+    with pytest.raises(SqlAlchemyConnectionError):
+        sql.session()
+
+
+def test_sqlalchemy_adapter_rejects_unknown_options_and_missing_client():
+    runtime = DataRuntime(
+        config=DataConfig.from_raw(
+            {
+                "data": {
+                    "resources": {
+                        "sql.local": {
+                            "type": "sqlalchemy",
+                            "url": "sqlite:///:memory:",
+                            "unsafe_option": True,
+                        }
+                    }
+                }
+            }
+        ),
+        catalog=DataAdapterCatalog.with_defaults(),
+    )
+
+    with pytest.raises(ValueError, match="Unsupported SQLAlchemy resource options"):
+        runtime.require_port("sql.local", SqlResourcePort).session()
+
+    missing_client_runtime = DataRuntime(
+        config=DataConfig.from_raw(_sqlalchemy_config()),
+        catalog=DataAdapterCatalog.with_defaults(sqlalchemy_provider=lambda: None),
+    )
+    with pytest.raises(SqlAlchemyClientMissingError):
+        missing_client_runtime.require_port("sql.local", SqlResourcePort).session()
+
+
 def test_qdrant_vector_port_is_registered_lazy_and_maps_operations():
     client = FakeQdrantClient()
     catalog = DataAdapterCatalog.with_defaults(
@@ -602,13 +716,18 @@ def test_data_source_does_not_import_vendor_or_ai_packages():
     core_text = "\n".join(
         path.read_text(encoding="utf-8")
         for path in source_root.rglob("*.py")
-        if path.name != "qdrant.py"
+        if path.name not in {"qdrant.py", "sqlalchemy.py"}
     )
 
-    for marker in ("muscles_ai", "muscles_otel", "elasticsearch", "opensearch", "redis", "pymongo", "boto3", "sqlalchemy"):
+    for marker in ("muscles_ai", "muscles_otel", "elasticsearch", "opensearch", "redis", "pymongo", "boto3"):
         assert marker not in core_text
+    assert "import sqlalchemy" not in core_text
+    assert "from sqlalchemy" not in core_text
     qdrant_source = source_root / "adapters" / "qdrant.py"
     assert "from qdrant_client" not in qdrant_source.read_text(encoding="utf-8")
+    sqlalchemy_source = source_root / "adapters" / "sqlalchemy.py"
+    assert "from sqlalchemy" not in sqlalchemy_source.read_text(encoding="utf-8")
+    assert "muscles_sql" not in sqlalchemy_source.read_text(encoding="utf-8")
 
 
 def test_package_public_exports():

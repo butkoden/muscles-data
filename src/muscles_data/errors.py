@@ -47,3 +47,19 @@ class QdrantFilterError(QdrantAdapterError):
 
 class QdrantDimensionError(QdrantAdapterError):
     """Raised when vectors are empty or incompatible with the Qdrant collection."""
+
+
+class SqlAlchemyAdapterError(DataError):
+    """Base error for direct SQLAlchemy resource adapter failures."""
+
+
+class SqlAlchemyConfigError(ValueError, SqlAlchemyAdapterError):
+    """Raised when a SQLAlchemy resource config cannot be mapped safely."""
+
+
+class SqlAlchemyClientMissingError(SqlAlchemyAdapterError):
+    """Raised when SQLAlchemy is not installed for a direct SQLAlchemy resource."""
+
+
+class SqlAlchemyConnectionError(SqlAlchemyAdapterError):
+    """Raised when a SQLAlchemy engine/session operation fails."""
