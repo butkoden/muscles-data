@@ -42,9 +42,11 @@ class DataAdapterCatalog:
         *,
         sql_registry_provider=None,
         sqlalchemy_provider=None,
+        elasticsearch_client_factory=None,
         qdrant_client_factory=None,
         qdrant_models_provider=None,
     ) -> "DataAdapterCatalog":
+        from .adapters.elasticsearch import ElasticsearchSearchFactory
         from .adapters.memory import (
             InMemoryDocumentStoreFactory,
             InMemoryKeyValueFactory,
@@ -61,6 +63,7 @@ class DataAdapterCatalog:
             InMemoryVectorFactory(),
             QdrantVectorFactory(client_factory=qdrant_client_factory, models_provider=qdrant_models_provider),
             InMemorySearchIndexFactory(),
+            ElasticsearchSearchFactory(client_factory=elasticsearch_client_factory),
             InMemoryObjectStoreFactory(),
             InMemoryKeyValueFactory(),
             InMemoryDocumentStoreFactory(),

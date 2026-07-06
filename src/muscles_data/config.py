@@ -34,6 +34,11 @@ class DataConfig:
                     raise ValueError(f"qdrant data resource '{name}' requires url")
                 if not normalized.get("collection"):
                     raise ValueError(f"qdrant data resource '{name}' requires collection")
+            if resource_type == "elasticsearch":
+                if not normalized.get("url"):
+                    raise ValueError(f"elasticsearch data resource '{name}' requires url")
+                if not normalized.get("index"):
+                    raise ValueError(f"elasticsearch data resource '{name}' requires index")
             capabilities = {
                 normalize_capability(item)
                 for item in normalized.get("capabilities", []) or []
