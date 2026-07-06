@@ -92,7 +92,10 @@ data:
       type: memory_object
 
     mongo.content:
-      type: memory_document
+      type: mongodb
+      url: ${MONGO_URL}
+      database: content
+      max_limit: 100
 
     sql.main:
       type: sql
@@ -114,6 +117,10 @@ when a matching resource is used. OpenSearch support is separate from
 Elasticsearch and uses its own optional `opensearch-py` dependency.
 Redis support is a separate optional adapter around `redis-py` for key-value,
 cache, lock and simple stream use cases.
+
+New vendor adapters can also live in separate packages. MongoDB support is
+provided by `muscles-data-mongodb`: install/register that package in the
+project composition root, then keep application code on `DocumentStorePort`.
 
 ### Qdrant Vector Resources
 
@@ -315,6 +322,42 @@ creation, retry policy, job semantics and message schema.
 The adapter does not own business cache schema, distributed transactions,
 serialization policy beyond bytes/Redis values, or a job framework.
 
+### MongoDB Document Resources
+
+MongoDB is intentionally provided as an external adapter package,
+`muscles-data-mongodb`, so `muscles-data` core does not depend on PyMongo:
+
+```yaml
+data:
+  resources:
+    mongo.content:
+      type: mongodb
+      url: ${MONGO_URL}
+      database: content
+      timeout: 3
+      max_limit: 100
+```
+
+Register the external factory in the project:
+
+```python
+from muscles_data.catalog import DataAdapterCatalog
+from muscles_data.ports import DocumentStorePort
+from muscles_data_mongodb import MongoDocumentStoreFactory
+
+catalog = DataAdapterCatalog.with_defaults()
+catalog.register(MongoDocumentStoreFactory())
+
+store = runtime.require_port("mongo.content", DocumentStorePort)
+```
+
+`DocumentStorePort` provides simple `get_document()`, `upsert_document()`,
+`find_documents()` and `delete_document()` operations. Complex aggregations,
+indexes, schema validation and migrations remain project responsibilities.
+Native MongoDB access is available only when the resource declares
+`native_client: true`; use it as an advanced escape hatch for backend-specific
+operations.
+
 ### SQL Resources
 
 `type: sql` is a bridge to named connections owned by `muscles-sql`:
@@ -482,6 +525,11 @@ backend-specific operations that do not belong in the narrow port.
 For Redis resources, the native handle is the underlying Redis client. Prefer
 `KeyValuePort`, `LockPort` and `StreamPort`; use native access only for
 backend-specific operations that do not belong in the narrow ports.
+
+For MongoDB resources from `muscles-data-mongodb`, the native handle is the
+underlying PyMongo `MongoClient`. Prefer `DocumentStorePort`; use native access
+only for aggregations, indexes or backend-specific operations that do not belong
+in the narrow port.
 
 ## Actions
 

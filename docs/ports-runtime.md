@@ -345,3 +345,25 @@ runtime = DataRuntime(config=config, catalog=catalog)
 
 The factory is responsible for translating the typed port into backend-specific
 client calls. Vendor dependencies remain inside the adapter module.
+
+## External Adapter Packages
+
+Vendor adapters that would pull extra dependencies can live outside
+`muscles-data`. The core contract stays the same:
+
+```python
+from muscles_data.catalog import DataAdapterCatalog
+from muscles_data.ports import DocumentStorePort
+from muscles_data_mongodb import MongoDocumentStoreFactory
+
+catalog = DataAdapterCatalog.with_defaults()
+catalog.register(MongoDocumentStoreFactory())
+store = runtime.require_port("mongo.content", DocumentStorePort)
+```
+
+For MongoDB, `muscles-data-mongodb` owns the PyMongo dependency, lazy client
+creation, database binding, simple document operations and safe diagnostics.
+`muscles-data` owns only `DocumentStorePort`, runtime capability checks and the
+registration mechanism. Complex aggregations, indexes, migrations and schema
+validation remain project-level concerns or explicit native-client escape
+hatches.
