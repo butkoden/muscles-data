@@ -67,6 +67,53 @@ checks client ping and index availability, while `data.resources.list` does not
 create a client. Native Elasticsearch access is available only when
 `native_client: true` is set and should remain an advanced project escape hatch.
 
+## OpenSearch Search Adapter
+
+`type: opensearch` is the built-in optional adapter for `SearchIndexPort` over
+OpenSearch:
+
+```python
+search = runtime.require_port("search.public", SearchIndexPort)
+hits = search.search_text("resume facts", filters={"section": "docs"}, limit=5)
+```
+
+Config:
+
+```yaml
+data:
+  resources:
+    search.public:
+      type: opensearch
+      url: ${OPENSEARCH_URL}
+      username: ${OPENSEARCH_USER}
+      password: ${OPENSEARCH_PASSWORD}
+      index: docs
+      timeout: 3
+      verify_certs: true
+```
+
+The adapter owns lazy client creation, index name binding, metadata filter
+translation, BM25/full-text search, document upsert/delete, highlight passthrough
+when requested, health checks and safe diagnostics. It does not own index
+lifecycle automation, analyzers, mappings, document parsing, embeddings, RAG
+orchestration or reranking.
+
+Filter mapping intentionally matches the Elasticsearch adapter:
+
+- scalar value -> `term` on `metadata.<field>`;
+- list/tuple/set -> `terms`;
+- `gt`, `gte`, `lt`, `lte` mapping -> `range`;
+- `$and`, `$or`, `$not` -> boolean groups.
+
+The implementation is separate from Elasticsearch because OpenSearch uses the
+`opensearch-py` dependency and OpenSearch client request conventions such as
+`body=...`. Framework packages still see only `SearchIndexPort`.
+
+Diagnostics redact `url`, password and auth fields. `data.doctor` checks client
+ping and index availability, while `data.resources.list` does not create a
+client. Native OpenSearch access is available only when `native_client: true` is
+set and should remain an advanced project escape hatch.
+
 ## Qdrant Vector Adapter
 
 `type: qdrant` is the built-in optional adapter for `VectorSearchPort`:
@@ -208,6 +255,9 @@ For direct SQLAlchemy resources, engine creation also remains lazy. Listing and
 initial package setup do not open database connections.
 
 For Elasticsearch, the real client is also lazy. It is created only by search,
+index/delete operations, explicit native access or `data.doctor`.
+
+For OpenSearch, the real client is also lazy. It is created only by search,
 index/delete operations, explicit native access or `data.doctor`.
 
 For Qdrant, the real client is also lazy. It is created only by vector

@@ -83,3 +83,23 @@ class ElasticsearchConnectionError(ElasticsearchAdapterError):
 
 class ElasticsearchFilterError(ElasticsearchAdapterError):
     """Raised when a data filter cannot be translated to Elasticsearch."""
+
+
+class OpenSearchAdapterError(DataError):
+    """Base error for OpenSearch search adapter failures."""
+
+
+class OpenSearchConfigError(ValueError, OpenSearchAdapterError):
+    """Raised when an OpenSearch resource config cannot be mapped safely."""
+
+
+class OpenSearchClientMissingError(OpenSearchAdapterError):
+    """Raised when OpenSearch adapter is used without an available client."""
+
+
+class OpenSearchConnectionError(OpenSearchAdapterError):
+    """Raised when an OpenSearch operation cannot reach or use the backend."""
+
+
+class OpenSearchFilterError(OpenSearchAdapterError):
+    """Raised when a data filter cannot be translated to OpenSearch."""
