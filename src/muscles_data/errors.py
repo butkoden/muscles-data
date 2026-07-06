@@ -27,3 +27,23 @@ class SqlConnectionMissingError(DataError):
 
 class AdapterInitError(DataError):
     """Raised when an adapter cannot be initialized safely."""
+
+
+class QdrantAdapterError(DataError):
+    """Base error for Qdrant vector adapter failures."""
+
+
+class QdrantClientMissingError(QdrantAdapterError):
+    """Raised when Qdrant adapter is used without an available client."""
+
+
+class QdrantConnectionError(QdrantAdapterError):
+    """Raised when Qdrant operation cannot reach or use the backend."""
+
+
+class QdrantFilterError(QdrantAdapterError):
+    """Raised when a data filter cannot be translated to Qdrant."""
+
+
+class QdrantDimensionError(QdrantAdapterError):
+    """Raised when vectors are empty or incompatible with the Qdrant collection."""
