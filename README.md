@@ -76,12 +76,19 @@ data:
       type: sql
       connection: main
       role: read_write
+
+    sql.local:
+      type: sqlalchemy
+      url: sqlite:///:memory:
+      name: local_sqlite
+      native_client: false
 ```
 
 Real backend adapters are added as optional adapter modules/factories. The core
 package does not import OpenSearch, Elasticsearch, Redis, MongoDB, S3 or
-SQLAlchemy clients. Qdrant support lives in an optional adapter module and
-imports `qdrant-client` only when a `type: qdrant` resource is used.
+SQLAlchemy clients at package import time. Qdrant and SQLAlchemy support live in
+optional adapter modules and import their vendor clients only when a matching
+resource is used.
 
 ### Qdrant Vector Resources
 
@@ -162,6 +169,50 @@ or migrations. `session()`, `session_factory()`, `inspect()` and `doctor()`
 delegate to a `muscles-sql` `SqlConnectionRegistry` supplied by the application
 container or by a project adapter.
 
+### SQLAlchemy Direct Resources
+
+`type: sqlalchemy` is a direct adapter for projects that want a named
+`SqlResourcePort` without wiring `muscles-sql` first:
+
+```yaml
+data:
+  resources:
+    sql.local:
+      type: sqlalchemy
+      url: sqlite:///:memory:
+      name: local_sqlite
+      pool_pre_ping: true
+      native_client: false
+```
+
+Install the optional client in projects that use this adapter:
+
+```bash
+python -m pip install 'muscles-data[sqlalchemy]'
+```
+
+Use it through the same SQL port:
+
+```python
+import sqlalchemy
+from muscles_data.ports import SqlResourcePort
+
+sql = runtime.require_port("sql.local", SqlResourcePort)
+
+with sql.session() as session:
+    rows = session.execute(sqlalchemy.text("SELECT 1")).fetchall()
+```
+
+The adapter owns lazy SQLAlchemy engine/session-factory creation, safe
+`inspect()` output, `doctor()` via `SELECT 1` and `close()` via
+`Engine.dispose()`. It accepts only a small set of `create_engine()` options:
+`echo`, `pool_pre_ping`, `pool_size`, `max_overflow`, `connect_args` and
+`future`.
+
+It still does not own repositories, Unit of Work, migrations, ORM models or a
+universal query API. The project decides whether to use SQLAlchemy Core,
+SQLAlchemy ORM or its own repository layer on top of the returned sessions.
+
 ## Runtime API
 
 ```python
@@ -193,6 +244,10 @@ For SQL resources, `data.resources.list` and package initialization do not open
 SQL connections. A SQL registry is resolved only when the SQL port is used or
 when `data.doctor` runs health checks.
 
+For SQLAlchemy resources, `data.resources.list` also remains lazy and does not
+create an engine. The engine is created by `SqlResourcePort.session()`,
+`session_factory()`, explicit native access or `data.doctor`.
+
 For Qdrant resources, `data.resources.list` and package initialization do not
 create a Qdrant client. The client is created lazily on vector operations,
 explicit native access or `data.doctor`.
@@ -217,6 +272,11 @@ credentials and raw payloads are never included in inspect/doctor output.
 For SQL resources, the native handle is the underlying SQL registry/connection
 API. Prefer `SqlResourcePort`; use native access only for project-specific SQL
 operations that cannot be represented by the port.
+
+For SQLAlchemy resources, native access returns a mapping with the underlying
+`engine` and `session_factory`, but only when `native_client: true` is declared.
+This is a project escape hatch for advanced SQLAlchemy operations; inspect and
+doctor never print native objects or credentials.
 
 For Qdrant resources, the native handle is the underlying `QdrantClient`.
 Prefer `VectorSearchPort`; use native access only for backend-specific
@@ -250,6 +310,7 @@ Run the local smoke example:
 ```bash
 PYTHONPATH=../muscles/src:src python3 examples/run_data_runtime.py
 PYTHONPATH=../muscles/src:src python3 examples/run_sql_resource_port.py
+PYTHONPATH=../muscles/src:src python3 examples/run_sqlalchemy_resource_port.py
 PYTHONPATH=../muscles/src:src python3 examples/run_qdrant_vector_port.py
 ```
 
