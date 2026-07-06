@@ -14,16 +14,18 @@ from muscles_data.adapters.memory import (
     InMemoryObjectStoreAdapter,
     InMemorySearchIndexAdapter,
     InMemoryVectorAdapter,
+    SqlBridgeFactory,
 )
 from muscles_data.catalog import DataAdapterCatalog
 from muscles_data.config import DataConfig
-from muscles_data.errors import DataCapabilityError
+from muscles_data.errors import DataCapabilityError, SqlConnectionMissingError, SqlRegistryMissingError
 from muscles_data.models import DataCapability, DataResourceConfig
 from muscles_data.ports import (
     DocumentStorePort,
     KeyValuePort,
     ObjectStorePort,
     SearchIndexPort,
+    SqlResourcePort,
     VectorSearchPort,
 )
 from muscles_data.runtime import DataRuntime
@@ -44,6 +46,49 @@ class CountingVectorFactory:
         return InMemoryVectorAdapter(config)
 
 
+class FakeSqlRegistry:
+    def __init__(self, *, fail_inspect: bool = False) -> None:
+        self.fail_inspect = fail_inspect
+        self.sessions: list[str] = []
+        self.factories: list[str] = []
+        self.inspections: list[str] = []
+        self.known = {
+            "main": {
+                "status": "ok",
+                "connection": {
+                    "name": "main",
+                    "url": "postgresql://user:secret@localhost/app",
+                    "safe_url": "postgresql://***@localhost/app",
+                    "role": "read_write",
+                },
+            }
+        }
+
+    def names(self) -> list[str]:
+        return sorted(self.known)
+
+    def session_factory(self, name: str = "default"):
+        self.factories.append(name)
+        self._require(name)
+        return f"factory:{name}"
+
+    def session(self, name: str = "default"):
+        self.sessions.append(name)
+        self._require(name)
+        return f"session:{name}"
+
+    def inspect(self, name: str = "default") -> dict[str, Any]:
+        self.inspections.append(name)
+        self._require(name)
+        if self.fail_inspect:
+            return {"status": "failed", "connection": self.known[name]["connection"]}
+        return dict(self.known[name])
+
+    def _require(self, name: str) -> None:
+        if name not in self.known:
+            raise KeyError(f"Unknown SQL connection: {name}")
+
+
 def _config() -> dict[str, Any]:
     return {
         "data": {
@@ -54,6 +99,7 @@ def _config() -> dict[str, Any]:
                 "objects.docs": {"type": "memory_object"},
                 "mongo.content": {"type": "memory_document"},
                 "native.debug": {"type": "memory_kv", "native_client": True},
+                "sql.main": {"type": "sql", "connection": "main", "role": "read_write"},
                 "broken.one": {"type": "missing_factory"},
             }
         }
@@ -70,6 +116,7 @@ def test_config_parser_accepts_resources_and_redacts_secrets():
         "native.debug",
         "objects.docs",
         "search.docs",
+        "sql.main",
         "vector.docs",
     ]
     assert config.resources["cache.default"].type == "memory_kv"
@@ -85,6 +132,11 @@ def test_catalog_rejects_duplicate_factory():
 
     with pytest.raises(ValueError, match="already registered"):
         catalog.register(factory)
+
+
+def test_sql_resource_config_requires_connection():
+    with pytest.raises(ValueError, match="requires connection"):
+        DataConfig.from_raw({"data": {"resources": {"sql.main": {"type": "sql"}}}})
 
 
 def test_runtime_lazy_initialization_and_capability_mismatch():
@@ -218,6 +270,68 @@ def test_package_registers_runtime_and_diagnostic_actions():
     assert "super-secret" not in repr(doctor)
 
 
+def test_sql_resource_port_delegates_to_sql_registry_without_startup_connection():
+    registry = FakeSqlRegistry()
+    catalog = DataAdapterCatalog.with_defaults(sql_registry_provider=lambda: registry)
+    runtime = DataRuntime(config=DataConfig.from_raw(_config()), catalog=catalog)
+
+    listed = runtime.list_resources()
+    assert "sql.main" in [item["name"] for item in listed]
+    assert ["sql_session"] == [
+        capability
+        for item in listed
+        if item["name"] == "sql.main"
+        for capability in item["capabilities"]
+        if capability == "sql_session"
+    ]
+    assert registry.sessions == []
+    assert registry.inspections == []
+
+    sql = runtime.require_port("sql.main", SqlResourcePort)
+
+    assert sql.connection_name() == "main"
+    assert sql.session() == "session:main"
+    assert sql.session_factory() == "factory:main"
+    inspection = sql.inspect()
+    assert inspection["status"] == "ok"
+    assert inspection["connection"]["url"] == "***"
+    assert inspection["connection"]["safe_url"] == "postgresql://***@localhost/app"
+    assert sql.doctor()["status"] == "ok"
+    assert registry.sessions == ["main"]
+    assert registry.factories == ["main"]
+
+
+def test_sql_resource_port_reports_missing_registry_and_connection():
+    missing_registry_runtime = DataRuntime(config=DataConfig.from_raw(_config()), catalog=DataAdapterCatalog.with_defaults())
+
+    with pytest.raises(SqlRegistryMissingError):
+        missing_registry_runtime.require_port("sql.main", SqlResourcePort).session()
+
+    registry = FakeSqlRegistry()
+    runtime = DataRuntime(
+        config=DataConfig.from_raw(
+            {"data": {"resources": {"sql.missing": {"type": "sql", "connection": "missing"}}}}
+        ),
+        catalog=DataAdapterCatalog.with_defaults(sql_registry_provider=lambda: registry),
+    )
+
+    sql = runtime.require_port("sql.missing", SqlResourcePort)
+    with pytest.raises(SqlConnectionMissingError, match="missing"):
+        sql.session()
+
+
+def test_sql_doctor_handles_partial_failure_safely():
+    registry = FakeSqlRegistry(fail_inspect=True)
+    runtime = DataRuntime(config=DataConfig.from_raw(_config()), catalog=DataAdapterCatalog.with_defaults(sql_registry_provider=lambda: registry))
+
+    doctor = runtime.doctor()
+
+    assert doctor["status"] == "failed"
+    sql_checks = [check for check in doctor["checks"] if check["resource"] == "sql.main"]
+    assert sql_checks[0]["status"] == "failed"
+    assert "secret" not in repr(doctor)
+
+
 def test_runtime_close_is_idempotent():
     runtime = DataRuntime(config=DataConfig.from_raw(_config()), catalog=DataAdapterCatalog.with_defaults())
     runtime.require_port("cache.default", KeyValuePort)
@@ -233,7 +347,7 @@ def test_data_source_does_not_import_vendor_or_ai_packages():
     source_root = __import__("pathlib").Path(__file__).resolve().parents[1] / "src" / "muscles_data"
     source_text = "\n".join(path.read_text(encoding="utf-8") for path in source_root.rglob("*.py"))
 
-    for marker in ("muscles_ai", "muscles_otel", "qdrant", "elasticsearch", "opensearch", "redis", "pymongo", "boto3"):
+    for marker in ("muscles_ai", "muscles_otel", "qdrant", "elasticsearch", "opensearch", "redis", "pymongo", "boto3", "sqlalchemy"):
         assert marker not in source_text
 
 
@@ -244,4 +358,5 @@ def test_package_public_exports():
     assert md.DataCapability
     assert md.VectorSearchPort
     assert md.ObjectStorePort
+    assert md.SqlResourcePort
     assert DataPackage.namespace == "data"

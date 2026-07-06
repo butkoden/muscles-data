@@ -37,7 +37,7 @@ class DataAdapterCatalog:
         return [{"type": name} for name in sorted(self._factories)]
 
     @classmethod
-    def with_defaults(cls) -> "DataAdapterCatalog":
+    def with_defaults(cls, *, sql_registry_provider=None) -> "DataAdapterCatalog":
         from .adapters.memory import (
             InMemoryDocumentStoreFactory,
             InMemoryKeyValueFactory,
@@ -54,7 +54,7 @@ class DataAdapterCatalog:
             InMemoryObjectStoreFactory(),
             InMemoryKeyValueFactory(),
             InMemoryDocumentStoreFactory(),
-            SqlBridgeFactory(),
+            SqlBridgeFactory(registry_provider=sql_registry_provider),
         ):
             catalog.register(factory)
         return catalog

@@ -67,11 +67,43 @@ data:
     sql.main:
       type: sql
       connection: main
+      role: read_write
 ```
 
 Real backend adapters are added as optional adapter modules/factories. The core
 package does not import Qdrant, OpenSearch, Elasticsearch, Redis, MongoDB, S3 or
 SQLAlchemy clients.
+
+### SQL Resources
+
+`type: sql` is a bridge to named connections owned by `muscles-sql`:
+
+```yaml
+data:
+  resources:
+    sql.documents:
+      type: sql
+      connection: documents_metadata
+      role: read_write
+```
+
+Use it through `SqlResourcePort`:
+
+```python
+from muscles_data import DataRuntime
+from muscles_data.ports import SqlResourcePort
+
+data = app.container.resolve(DataRuntime)
+sql = data.require_port("sql.documents", SqlResourcePort)
+
+with sql.session() as session:
+    ...
+```
+
+`muscles-data` does not create SQL engines, repositories, Unit of Work objects
+or migrations. `session()`, `session_factory()`, `inspect()` and `doctor()`
+delegate to a `muscles-sql` `SqlConnectionRegistry` supplied by the application
+container or by a project adapter.
 
 ## Runtime API
 
@@ -100,6 +132,10 @@ cache = runtime.require_port("cache.default", KeyValuePort)
 Adapters are initialized lazily: package init and resource listing do not open
 connections.
 
+For SQL resources, `data.resources.list` and package initialization do not open
+SQL connections. A SQL registry is resolved only when the SQL port is used or
+when `data.doctor` runs health checks.
+
 ## Native Escape Hatch
 
 The preferred path is always a typed port. A project may explicitly request a
@@ -116,6 +152,10 @@ native = handle.native_client()
 This is an advanced escape hatch for project-specific operations. Framework
 packages should not build their primary logic on native clients. Native handles,
 credentials and raw payloads are never included in inspect/doctor output.
+
+For SQL resources, the native handle is the underlying SQL registry/connection
+API. Prefer `SqlResourcePort`; use native access only for project-specific SQL
+operations that cannot be represented by the port.
 
 ## Actions
 
@@ -144,6 +184,7 @@ Run the local smoke example:
 
 ```bash
 PYTHONPATH=../muscles/src:src python3 examples/run_data_runtime.py
+PYTHONPATH=../muscles/src:src python3 examples/run_sql_resource_port.py
 ```
 
 Run tests:
