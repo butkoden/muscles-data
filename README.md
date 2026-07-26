@@ -83,7 +83,7 @@ data:
   resources:
     search.elastic:
       type: elasticsearch
-      url: ${ELASTICSEARCH_URL}
+      url_env: ELASTICSEARCH_URL
       api_key: ${ELASTICSEARCH_API_KEY}
       index: docs
 
@@ -96,15 +96,18 @@ data:
 
     cache.redis:
       type: redis
-      url: ${REDIS_URL}
+      url_env: REDIS_URL
       namespace: app
       stream_group: workers
+      consumer: index-worker
 
     vector.qdrant:
       type: qdrant
-      url: ${QDRANT_URL}
+      url_env: QDRANT_URL
       api_key: ${QDRANT_API_KEY}
       collection: docs
+      vector_size: 1536
+      distance: cosine
 
     mongo.content:
       type: mongodb
@@ -153,7 +156,8 @@ catalog.register(RedisDataFactory())
 
 `muscles-data` core does not import these packages automatically. This keeps
 framework startup small and avoids pulling database SDKs into projects that do
-not need them.
+not need them. Registration is deliberately manual: projects install and
+register only the adapter packages they need.
 
 ## Runtime API
 

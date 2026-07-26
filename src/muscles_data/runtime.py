@@ -204,6 +204,7 @@ class DataRuntime:
                         "resource": name,
                         "type": resource.type,
                         "status": "failed",
+                        "code": "adapter_not_found",
                         "reason": "adapter_factory_not_found",
                     }
                 )
@@ -216,6 +217,7 @@ class DataRuntime:
                     "resource": name,
                     "type": resource.type,
                     "status": health.get("status", "ok"),
+                    "code": health.get("code"),
                     "message": health.get("message"),
                 }
             )

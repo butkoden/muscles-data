@@ -144,6 +144,17 @@ External adapters must follow the same rule: listing resources and package init
 must not open database/network connections. Real clients are created only by
 port operations, explicit native access or `data.doctor`.
 
+Network-backed resources use an environment-variable name as the canonical
+endpoint configuration:
+
+```yaml
+url_env: ELASTICSEARCH_URL
+```
+
+The value is resolved lazily when a client is created and is never included in
+safe inspection or doctor output. Adapter registration remains manual so the
+core package does not import optional vendor SDKs.
+
 ## Diagnostics
 
 Diagnostics are safe by default:
@@ -156,6 +167,11 @@ Diagnostics are safe by default:
 
 Adapter packages may add backend-specific health checks, but they must not leak
 credentials or raw payloads in `inspect()` or `doctor()` output.
+
+Health reports use stable codes such as `ok`, `configuration_error`,
+`connection_failed`, `resource_missing` and `schema_mismatch`. Reusable
+port-only checks are available from `muscles_data.contracts` for adapter
+authors.
 
 ## Native Escape Hatch
 

@@ -27,3 +27,35 @@ class SqlConnectionMissingError(DataError):
 
 class AdapterInitError(DataError):
     """Raised when an adapter cannot be initialized safely."""
+
+
+class DataConfigurationError(DataError):
+    """Raised when a resource configuration is incomplete or invalid."""
+
+
+class DataConnectionError(DataError):
+    """Raised when a backend cannot be reached or used."""
+
+
+class DataAuthenticationError(DataConnectionError):
+    """Raised when a backend rejects configured credentials."""
+
+
+class DataTimeoutError(DataConnectionError):
+    """Raised when a backend operation exceeds its timeout."""
+
+
+class DataResourceMissingError(DataError):
+    """Raised when a backend resource such as an index is missing."""
+
+
+class DataSchemaMismatchError(DataError):
+    """Raised when a backend schema cannot satisfy the port contract."""
+
+
+class DataUnsupportedOperationError(DataError):
+    """Raised when a backend does not support a requested port operation."""
+
+
+class DataVectorDimensionError(DataSchemaMismatchError):
+    """Raised when a vector does not match the configured backend dimension."""

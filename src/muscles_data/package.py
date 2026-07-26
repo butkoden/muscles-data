@@ -158,5 +158,11 @@ class _LegacyContainer:
         if inspect.isclass(provider):
             return provider(*args, **kwargs)
         if callable(provider):
-            return provider(*args, **kwargs)
+            try:
+                return provider(*args, **kwargs)
+            except TypeError as exc:
+                if "unexpected keyword argument 'scope'" not in str(exc):
+                    raise
+                kwargs = {key: value for key, value in kwargs.items() if key != "scope"}
+                return provider(*args, **kwargs)
         return provider

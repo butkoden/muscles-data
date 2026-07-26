@@ -119,14 +119,25 @@ class InMemorySearchIndexAdapter(_MemoryAdapterBase):
             haystack = text.lower()
             if query_text in haystack:
                 score = haystack.count(query_text) + (1.0 / max(1, len(text)))
-                hits.append(SearchHit(id=document_id, score=score, text=text, metadata=dict(metadata)))
+                hits.append(
+                    SearchHit(
+                        id=document_id,
+                        score=score,
+                        text=text,
+                        title=str(metadata["title"]) if metadata.get("title") is not None else None,
+                        metadata=dict(metadata),
+                    )
+                )
         return sorted(hits, key=lambda hit: hit.score, reverse=True)[: max(0, limit)]
 
     def upsert_documents(self, items: list[Mapping[str, Any]], options: Mapping[str, Any] | None = None) -> WriteResult:
         del options
         for item in items:
             document_id = str(item["id"])
-            self._documents[document_id] = (str(item.get("text", "")), dict(item.get("metadata", {}) or {}))
+            metadata = dict(item.get("metadata", {}) or {})
+            if item.get("title") is not None:
+                metadata.setdefault("title", item["title"])
+            self._documents[document_id] = (str(item.get("text", "")), metadata)
         return WriteResult(written=len(items), matched=len(items))
 
     def delete_documents(
