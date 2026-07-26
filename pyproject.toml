@@ -7,10 +7,11 @@ name = "muscles-data"
 version = "0.1.0"
 description = "Framework-level named data resources and typed ports for Muscles"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.10"
 authors = [{ name = "Denis B.", email = "denis@butko.info" }]
 dependencies = [
-  "muscles>=3.0.0",
+  "muscles>=1.0.0rc1,<2.0.0",
 ]
 
 [project.optional-dependencies]
