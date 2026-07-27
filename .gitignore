@@ -4,6 +4,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .venv/
+.codex/data-integration-venv/
 dist/
 build/
 *.egg-info/

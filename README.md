@@ -271,3 +271,17 @@ Run tests:
 ```bash
 PYTHONPATH=../muscles/src:src python3 -m pytest -q
 ```
+
+Run the real-backend integration suite locally (Docker and the optional SDKs
+are required):
+
+```bash
+make data-integration-test
+```
+
+The command starts isolated Elasticsearch, OpenSearch, Qdrant, Redis,
+MongoDB, MinIO and PostgreSQL containers, runs every adapter's contract and
+backend lifecycle tests, and removes the containers on exit. Set
+`MUSCLES_DATA_PYTHON` to use a different Python environment. The compose file
+and port map are documented in
+[`infra/docker-compose.integration.yml`](infra/docker-compose.integration.yml).
