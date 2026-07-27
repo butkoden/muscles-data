@@ -5,10 +5,24 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from .catalog import DataAdapterCatalog, DataAdapterFactory
     from .config import DataConfig
-    from .models import DataCapability, DataResourceConfig
+    from .models import (
+        DataCapability,
+        DataEventAckRequest,
+        DataEventAckResult,
+        DataEventEnvelope,
+        DataEventPublishRequest,
+        DataEventPublishResult,
+        DataEventReadRequest,
+        DataEventReadResult,
+        DataEventSchemaRef,
+        DataResourceConfig,
+    )
     from .package import DataPackage
     from .ports import (
         DocumentStorePort,
+        EventConsumerPort,
+        EventPublisherPort,
+        EventStorePort,
         KeyValuePort,
         LockPort,
         ObjectStorePort,
@@ -24,12 +38,23 @@ __all__ = [
     "DataAdapterCatalog",
     "DataAdapterFactory",
     "DataCapability",
+    "DataEventAckRequest",
+    "DataEventAckResult",
+    "DataEventEnvelope",
+    "DataEventPublishRequest",
+    "DataEventPublishResult",
+    "DataEventReadRequest",
+    "DataEventReadResult",
+    "DataEventSchemaRef",
     "DataConfig",
     "DataPackage",
     "DataResourceConfig",
     "DataResourceHandle",
     "DataRuntime",
     "DocumentStorePort",
+    "EventConsumerPort",
+    "EventPublisherPort",
+    "EventStorePort",
     "KeyValuePort",
     "LockPort",
     "ObjectStorePort",
@@ -54,6 +79,30 @@ def __getattr__(name: str):
     if name == "DataConfig":
         from .config import DataConfig
         return DataConfig
+    if name == "DataEventAckRequest":
+        from .models import DataEventAckRequest
+        return DataEventAckRequest
+    if name == "DataEventAckResult":
+        from .models import DataEventAckResult
+        return DataEventAckResult
+    if name == "DataEventEnvelope":
+        from .models import DataEventEnvelope
+        return DataEventEnvelope
+    if name == "DataEventPublishRequest":
+        from .models import DataEventPublishRequest
+        return DataEventPublishRequest
+    if name == "DataEventPublishResult":
+        from .models import DataEventPublishResult
+        return DataEventPublishResult
+    if name == "DataEventReadRequest":
+        from .models import DataEventReadRequest
+        return DataEventReadRequest
+    if name == "DataEventReadResult":
+        from .models import DataEventReadResult
+        return DataEventReadResult
+    if name == "DataEventSchemaRef":
+        from .models import DataEventSchemaRef
+        return DataEventSchemaRef
     if name == "DataPackage":
         from .package import DataPackage
         return DataPackage
@@ -69,6 +118,15 @@ def __getattr__(name: str):
     if name == "DocumentStorePort":
         from .ports import DocumentStorePort
         return DocumentStorePort
+    if name == "EventConsumerPort":
+        from .ports import EventConsumerPort
+        return EventConsumerPort
+    if name == "EventPublisherPort":
+        from .ports import EventPublisherPort
+        return EventPublisherPort
+    if name == "EventStorePort":
+        from .ports import EventStorePort
+        return EventStorePort
     if name == "KeyValuePort":
         from .ports import KeyValuePort
         return KeyValuePort

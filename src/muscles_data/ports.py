@@ -2,7 +2,17 @@ from __future__ import annotations
 
 from typing import Any, Mapping, Protocol, runtime_checkable
 
-from .models import HealthResult, ObjectBlob, ObjectInfo, StreamReadResult, WriteResult
+from .models import (
+    DataEventAckResult,
+    DataEventEnvelope,
+    DataEventPublishResult,
+    DataEventReadResult,
+    HealthResult,
+    ObjectBlob,
+    ObjectInfo,
+    StreamReadResult,
+    WriteResult,
+)
 
 
 @runtime_checkable
@@ -94,6 +104,54 @@ class StreamPort(Protocol):
     def read(self, stream: str, cursor: str | None = None, limit: int = 100) -> StreamReadResult: ...
 
     def ack(self, stream: str, message_id: str) -> WriteResult: ...
+
+
+@runtime_checkable
+class EventPublisherPort(Protocol):
+    def publish_event(
+        self,
+        stream: str,
+        event: DataEventEnvelope | Mapping[str, Any],
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventPublishResult | Mapping[str, Any]: ...
+
+
+@runtime_checkable
+class EventConsumerPort(Protocol):
+    def read_events(
+        self,
+        stream: str,
+        cursor: str | None = None,
+        limit: int = 100,
+        consumer: str | None = None,
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventReadResult | Mapping[str, Any]: ...
+
+    def ack_event(
+        self,
+        stream: str,
+        message_id: str,
+        consumer: str | None = None,
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventAckResult | Mapping[str, Any]: ...
+
+
+@runtime_checkable
+class EventStorePort(Protocol):
+    def append_event(
+        self,
+        stream: str,
+        event: DataEventEnvelope | Mapping[str, Any],
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventPublishResult | Mapping[str, Any]: ...
+
+    def load_events(
+        self,
+        stream: str,
+        cursor: str | None = None,
+        limit: int = 100,
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventReadResult | Mapping[str, Any]: ...
 
 
 @runtime_checkable

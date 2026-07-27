@@ -30,6 +30,9 @@ The core package owns:
   - `KeyValuePort`;
   - `LockPort`;
   - `StreamPort`;
+  - `EventPublisherPort`;
+  - `EventConsumerPort`;
+  - `EventStorePort`;
   - `DocumentStorePort`;
   - `SqlResourcePort`;
 - safe `data.resources.list`, `data.resource.inspect`, `data.doctor` actions;
@@ -46,6 +49,21 @@ It intentionally does not own:
 - RAG, document parsing, embeddings, prompts or LLM calls;
 - protocol routes;
 - distributed transactions across backends.
+
+## Event-driven data contract
+
+`DataEventEnvelope` and the publish/read/ack request and result models are core
+`muscles.Model` schemas. They are visible through `inspect_application` and can
+be reused by protocol projections without a second DTO or schema system.
+
+The MVP includes `EventPublisherPort`, `EventConsumerPort` and `EventStorePort`,
+plus the `memory_event` adapter for tests and local examples. Event schemas
+describe semantic facts; `StreamPort` remains a lower-level transport
+primitive. Production transports, outbox/inbox workers and distributed
+transactions remain separate extensions.
+
+Diagnostics expose only safe counts and resource metadata; event payloads are
+never included in `inspect` or `doctor` output.
 
 ## Configuration
 
