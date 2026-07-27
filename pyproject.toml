@@ -14,6 +14,21 @@ dependencies = [
   "muscles>=1.0.0rc1,<2.0.0",
 ]
 
+[project.urls]
+Homepage = "https://github.com/butkoden/muscles-data"
+Repository = "https://github.com/butkoden/muscles-data"
+Documentation = "https://github.com/butkoden/muscles-data#readme"
+PyPI = "https://pypi.org/project/muscles-data/"
+Releases = "https://github.com/butkoden/muscles-data/releases"
+"muscles" = "https://pypi.org/project/muscles/"
+"muscles-data-elasticsearch" = "https://pypi.org/project/muscles-data-elasticsearch/"
+"muscles-data-opensearch" = "https://pypi.org/project/muscles-data-opensearch/"
+"muscles-data-qdrant" = "https://pypi.org/project/muscles-data-qdrant/"
+"muscles-data-redis" = "https://pypi.org/project/muscles-data-redis/"
+"muscles-data-mongodb" = "https://pypi.org/project/muscles-data-mongodb/"
+"muscles-data-s3" = "https://pypi.org/project/muscles-data-s3/"
+"muscles-data-sqlalchemy" = "https://pypi.org/project/muscles-data-sqlalchemy/"
+
 [project.optional-dependencies]
 dev = [
   "pytest>=8.0,<9.0",
