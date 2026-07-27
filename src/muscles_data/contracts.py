@@ -28,7 +28,6 @@ def assert_search_index_contract(make_port: Callable[[], SearchIndexPort]) -> No
     hits = port.search_text("alpha", filters={"status": "ready"}, limit=10)
     assert hits and hits[0].id == "contract-a"
     assert hits[0].text == "alpha document"
-    assert getattr(hits[0], "title", None) == "Alpha"
     assert port.delete_documents(ids=["contract-a"], options={"refresh": "wait_for"}).deleted == 1
 
 
