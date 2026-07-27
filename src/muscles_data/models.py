@@ -2,10 +2,26 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+import datetime
+import json
 import os
 from typing import Any, Mapping
+from uuid import UUID
 
 from .errors import DataConfigurationError
+
+from muscles import (
+    Boolean as CoreBoolean,
+    Column,
+    DateTime as CoreDateTime,
+    Enum as CoreEnum,
+    Integer as CoreInteger,
+    Json as CoreJson,
+    List as CoreList,
+    Model,
+    String as CoreString,
+    UUID4,
+)
 
 
 class DataCapability(str, Enum):
@@ -19,6 +35,9 @@ class DataCapability(str, Enum):
     CACHE = "cache"
     LOCK = "lock"
     STREAM = "stream"
+    EVENT_PUBLISH = "event_publish"
+    EVENT_SUBSCRIBE = "event_subscribe"
+    EVENT_STORE = "event_store"
     SQL_SESSION = "sql_session"
     NATIVE_CLIENT = "native_client"
     HEALTHCHECK = "healthcheck"
@@ -163,3 +182,142 @@ class LockHandle:
 class StreamReadResult:
     messages: list[dict[str, Any]]
     cursor: str | None = None
+
+
+class DataEventEnvelope(Model):
+    """Framework-level envelope for a fact produced by a data resource."""
+
+    __collection__ = "data_event_envelope"
+
+    id = Column(UUID4, default="generate_uuid4", primary_key=True)
+    type = Column(CoreString, index=True, nullable=False, example="document.indexed")
+    source = Column(CoreString, index=True, nullable=False, example="documents.ingestion")
+    subject = Column(CoreString, index=True, example="documents/doc-123")
+    specversion = Column(CoreString, default="1.0")
+    schema_version = Column(CoreString, default="1")
+    resource = Column(CoreString, index=True, example="documents.local")
+    operation = Column(
+        CoreEnum(enum=["create", "update", "delete", "upsert", "publish", "ack"]),
+        index=True,
+        example="upsert",
+    )
+    payload = Column(CoreJson, default={})
+    metadata = Column(CoreJson, default={})
+    correlation_id = Column(CoreString, index=True)
+    causation_id = Column(CoreString, index=True)
+    occurred_at = Column(CoreDateTime, default="now", index=True)
+
+
+class DataEventSchemaRef(Model):
+    """Reference to a domain payload schema owned by an application."""
+
+    __collection__ = "data_event_schema_ref"
+
+    name = Column(CoreString, nullable=False)
+    version = Column(CoreString, default="1")
+    schema_uri = Column(CoreString)
+    content_type = Column(CoreString, default="application/json")
+    checksum = Column(CoreString)
+    metadata = Column(CoreJson, default={})
+
+
+class DataEventPublishRequest(Model):
+    __collection__ = "data_event_publish_request"
+
+    resource = Column(CoreString, nullable=False)
+    stream = Column(CoreString, nullable=False)
+    event = Column(CoreJson, default={})
+    options = Column(CoreJson, default={})
+
+
+class DataEventPublishResult(Model):
+    __collection__ = "data_event_publish_result"
+
+    status = Column(CoreEnum(enum=["ok", "failed"]), default="ok")
+    event_id = Column(CoreString)
+    stream = Column(CoreString)
+    message_id = Column(CoreString)
+    published = Column(CoreBoolean, default=False)
+    errors = Column(CoreList(CoreString()), default=[])
+    metadata = Column(CoreJson, default={})
+
+
+class DataEventReadRequest(Model):
+    __collection__ = "data_event_read_request"
+
+    resource = Column(CoreString, nullable=False)
+    stream = Column(CoreString, nullable=False)
+    cursor = Column(CoreString)
+    limit = Column(CoreInteger, default=100)
+    consumer = Column(CoreString)
+    options = Column(CoreJson, default={})
+
+
+class DataEventReadResult(Model):
+    __collection__ = "data_event_read_result"
+
+    status = Column(CoreEnum(enum=["ok", "failed"]), default="ok")
+    events = Column(CoreList(CoreJson()), default=[])
+    cursor = Column(CoreString)
+    count = Column(CoreInteger, default=0)
+    errors = Column(CoreList(CoreString()), default=[])
+    metadata = Column(CoreJson, default={})
+
+
+class DataEventAckRequest(Model):
+    __collection__ = "data_event_ack_request"
+
+    resource = Column(CoreString, nullable=False)
+    stream = Column(CoreString, nullable=False)
+    message_id = Column(CoreString, nullable=False)
+    event_id = Column(CoreString)
+    consumer = Column(CoreString)
+    options = Column(CoreJson, default={})
+
+
+class DataEventAckResult(Model):
+    __collection__ = "data_event_ack_result"
+
+    status = Column(CoreEnum(enum=["ok", "failed"]), default="ok")
+    event_id = Column(CoreString)
+    message_id = Column(CoreString)
+    acked = Column(CoreBoolean, default=False)
+    errors = Column(CoreList(CoreString()), default=[])
+    metadata = Column(CoreJson, default={})
+
+
+def event_to_mapping(event: DataEventEnvelope | Mapping[str, Any]) -> dict[str, Any]:
+    """Convert an envelope or plain mapping to a transport-safe event mapping."""
+
+    if isinstance(event, Mapping):
+        return _json_safe(dict(event))
+    if not isinstance(event, DataEventEnvelope):
+        raise TypeError("event must be a DataEventEnvelope or a mapping")
+
+    values: dict[str, Any] = {}
+    for name, column in event.columns.items():
+        value = getattr(event, name, None)
+        if getattr(column.field_type, "data_type", None) == "json":
+            if value is None:
+                value = column.default() if callable(column.default) else column.default
+            if isinstance(value, str):
+                try:
+                    value = json.loads(value)
+                except json.JSONDecodeError:
+                    pass
+        elif value is None:
+            value = column.field_type.getstate(value, column)
+        values[name] = _json_safe(value)
+    return values
+
+
+def _json_safe(value: Any) -> Any:
+    if isinstance(value, (datetime.datetime, datetime.date)):
+        return value.isoformat()
+    if isinstance(value, UUID):
+        return str(value)
+    if isinstance(value, Mapping):
+        return {str(key): _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    return value

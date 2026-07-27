@@ -44,6 +44,7 @@ class DataAdapterCatalog:
     ) -> "DataAdapterCatalog":
         from .adapters.memory import (
             InMemoryDocumentStoreFactory,
+            InMemoryEventFactory,
             InMemoryKeyValueFactory,
             InMemoryObjectStoreFactory,
             InMemorySearchIndexFactory,
@@ -58,6 +59,7 @@ class DataAdapterCatalog:
             InMemoryObjectStoreFactory(),
             InMemoryKeyValueFactory(),
             InMemoryDocumentStoreFactory(),
+            InMemoryEventFactory(),
             SqlBridgeFactory(registry_provider=sql_registry_provider),
         ):
             catalog.register(factory)

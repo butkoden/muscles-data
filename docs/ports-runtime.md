@@ -22,6 +22,9 @@ or require an explicit native-client escape hatch.
 - `KeyValuePort` — cache/key-value get/set/delete/exists with TTL support.
 - `LockPort` — short-lived distributed locks with owner-token validation.
 - `StreamPort` — minimal publish/read/ack stream contract.
+- `EventPublisherPort` — publish a semantic event envelope to a named stream.
+- `EventConsumerPort` — read event messages and acknowledge processing.
+- `EventStorePort` — append and load events as a journal of facts.
 - `DocumentStorePort` — simple document DB get/upsert/find/delete.
 - `SqlResourcePort` — bridge contract to SQL resources; SQL lifecycle remains in
   `muscles-sql`, a project registry or a registered adapter.
@@ -34,6 +37,7 @@ Core registers only lightweight adapters that have no vendor SDK dependency:
 - `memory_search` -> `SearchIndexPort`;
 - `memory_object` -> `ObjectStorePort`;
 - `memory_kv` -> `KeyValuePort`, `LockPort`, `StreamPort`;
+- `memory_event` -> `EventPublisherPort`, `EventConsumerPort`, `EventStorePort`;
 - `memory_document` -> `DocumentStorePort`;
 - `sql` -> `SqlResourcePort` bridge to a supplied SQL registry.
 
@@ -143,6 +147,20 @@ may call SQL inspect/health behavior, but `data.resources.list` does not.
 External adapters must follow the same rule: listing resources and package init
 must not open database/network connections. Real clients are created only by
 port operations, explicit native access or `data.doctor`.
+
+## Event schema versus transport
+
+`DataEventEnvelope` is the canonical core schema for a data fact. It carries
+identity, event type, source, subject, schema version, operation, payload and
+causation/correlation metadata. Domain projects own their payload schemas and
+event types.
+
+`StreamPort` is a transport primitive. The event ports provide event semantics
+on top of a backend and may be implemented using a stream, queue or event log.
+The core package does not import Kafka, Redis, NATS or another vendor client.
+
+Outbox and inbox are future extensions. They require a transactional boundary
+and are not implied by publishing through an event port.
 
 Network-backed resources use an environment-variable name as the canonical
 endpoint configuration:

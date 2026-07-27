@@ -10,6 +10,9 @@ from .errors import DataAdapterNotFoundError, DataCapabilityError, DataResourceN
 from .models import DataCapability, HealthResult, InspectResult, serialize_capabilities, serialize_safe_capabilities
 from .ports import (
     DocumentStorePort,
+    EventConsumerPort,
+    EventPublisherPort,
+    EventStorePort,
     KeyValuePort,
     LockPort,
     ObjectStorePort,
@@ -27,6 +30,9 @@ PORT_CAPABILITIES: dict[type, set[DataCapability]] = {
     KeyValuePort: {DataCapability.KEY_VALUE},
     LockPort: {DataCapability.LOCK},
     StreamPort: {DataCapability.STREAM},
+    EventPublisherPort: {DataCapability.EVENT_PUBLISH},
+    EventConsumerPort: {DataCapability.EVENT_SUBSCRIBE},
+    EventStorePort: {DataCapability.EVENT_STORE},
     DocumentStorePort: {DataCapability.DOCUMENT_STORE},
     SqlResourcePort: {DataCapability.SQL_SESSION},
 }
