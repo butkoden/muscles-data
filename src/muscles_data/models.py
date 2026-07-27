@@ -2,7 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+import os
 from typing import Any, Mapping
+
+from .errors import DataConfigurationError
 
 
 class DataCapability(str, Enum):
@@ -69,6 +72,20 @@ class DataResourceConfig:
     def safe_options(self) -> dict[str, Any]:
         return redact_mapping(self.options)
 
+    def resolved_options(self, environ: Mapping[str, str] | None = None) -> dict[str, Any]:
+        """Resolve canonical ``*_env`` settings without mutating the config."""
+        options = dict(self.options)
+        environment = os.environ if environ is None else environ
+        url_env = options.get("url_env")
+        if url_env:
+            value = environment.get(str(url_env))
+            if not value:
+                raise DataConfigurationError(
+                    f"Data resource '{self.name}' requires environment variable '{url_env}'"
+                )
+            options["url"] = value
+        return options
+
 
 @dataclass(frozen=True)
 class VectorHit:
@@ -76,6 +93,8 @@ class VectorHit:
     score: float
     payload: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
+    text: str | None = None
+    title: str | None = None
 
 
 @dataclass(frozen=True)
@@ -85,6 +104,7 @@ class SearchHit:
     text: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
     highlights: dict[str, list[str]] = field(default_factory=dict)
+    title: str | None = None
 
 
 @dataclass(frozen=True)
@@ -110,6 +130,7 @@ class WriteResult:
     deleted: int = 0
     matched: int = 0
     errors: list[str] = field(default_factory=list)
+    message_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -117,6 +138,7 @@ class HealthResult:
     status: str
     message: str | None = None
     details: dict[str, Any] = field(default_factory=dict)
+    code: str | None = None
 
 
 @dataclass(frozen=True)

@@ -1,9 +1,4 @@
-"""Reusable contract checks for authors of ``muscles-data`` adapters.
-
-The checks deliberately use only the public port methods.  Adapter projects can
-call them from their own pytest suite with a factory that returns an isolated
-port instance, without importing a vendor SDK into this package.
-"""
+"""Reusable public-port contract checks for data adapter authors."""
 
 from __future__ import annotations
 
@@ -12,7 +7,15 @@ from dataclasses import replace
 from typing import Any
 
 from .models import LockHandle
-from .ports import DocumentStorePort, KeyValuePort, LockPort, ObjectStorePort, SearchIndexPort, StreamPort, VectorSearchPort
+from .ports import (
+    DocumentStorePort,
+    KeyValuePort,
+    LockPort,
+    ObjectStorePort,
+    SearchIndexPort,
+    StreamPort,
+    VectorSearchPort,
+)
 
 
 def assert_search_index_contract(make_port: Callable[[], SearchIndexPort]) -> None:
@@ -127,8 +130,8 @@ def assert_sql_resource_contract(make_port: Callable[[], Any]) -> None:
 
 __all__ = [
     "assert_document_store_contract",
-    "assert_lock_contract",
     "assert_key_value_contract",
+    "assert_lock_contract",
     "assert_object_store_contract",
     "assert_search_index_contract",
     "assert_sql_resource_contract",

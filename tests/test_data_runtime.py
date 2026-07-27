@@ -19,6 +19,7 @@ from muscles_data.adapters.memory import (
 from muscles_data.catalog import DataAdapterCatalog
 from muscles_data.config import DataConfig
 from muscles_data.errors import (
+    DataConfigurationError,
     DataCapabilityError,
     SqlConnectionMissingError,
     SqlRegistryMissingError,
@@ -126,6 +127,32 @@ def test_config_parser_accepts_resources_and_redacts_secrets():
     assert config.resources["cache.default"].type == "memory_kv"
     assert config.resources["cache.default"].safe_options()["token"] == "***"
     assert config.resources["search.docs"].safe_options()["url"] == "***"
+
+
+def test_resource_config_resolves_canonical_url_env_lazily_without_exposing_value(monkeypatch):
+    monkeypatch.setenv("ELASTICSEARCH_URL", "https://user:secret@elastic.example")
+    config = DataConfig.from_raw(
+        {
+            "data": {
+                "resources": {
+                    "search.elastic": {
+                        "type": "elasticsearch",
+                        "url_env": "ELASTICSEARCH_URL",
+                        "index": "docs",
+                    }
+                }
+            }
+        }
+    )
+    resource = config.resources["search.elastic"]
+
+    assert resource.resolved_options()["url"] == "https://user:secret@elastic.example"
+    assert resource.safe_options()["url_env"] == "***"
+    assert "secret" not in repr(resource.safe_options())
+
+    monkeypatch.delenv("ELASTICSEARCH_URL")
+    with pytest.raises(DataConfigurationError, match="ELASTICSEARCH_URL"):
+        resource.resolved_options()
 
 
 def test_catalog_rejects_duplicate_factory():
@@ -334,6 +361,15 @@ def test_sql_doctor_handles_partial_failure_safely():
     sql_checks = [check for check in doctor["checks"] if check["resource"] == "sql.main"]
     assert sql_checks[0]["status"] == "failed"
     assert "secret" not in repr(doctor)
+
+
+def test_health_result_exposes_stable_diagnostic_code():
+    runtime = DataRuntime(config=DataConfig.from_raw(_config()), catalog=DataAdapterCatalog.with_defaults())
+
+    doctor = runtime.doctor()
+    broken = [check for check in doctor["checks"] if check["resource"] == "broken.one"][0]
+
+    assert broken["code"] == "adapter_not_found"
 
 
 
