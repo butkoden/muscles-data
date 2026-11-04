@@ -7,8 +7,8 @@ from typing import Any
 import pytest
 from muscles import ActionDispatcher, inspect_application
 
-from muscles_data import DataPackage, init_package
-from muscles_data.adapters.memory import (
+from muscles.data import DataPackage, init_package
+from muscles.data.adapters.memory import (
     InMemoryDocumentStoreAdapter,
     InMemoryKeyValueAdapter,
     InMemoryObjectStoreAdapter,
@@ -16,15 +16,16 @@ from muscles_data.adapters.memory import (
     InMemoryVectorAdapter,
     SqlBridgeFactory,
 )
-from muscles_data.catalog import DataAdapterCatalog
-from muscles_data.config import DataConfig
-from muscles_data.errors import (
+from muscles.data.catalog import DataAdapterCatalog
+from muscles.data.config import DataConfig
+from muscles.data.errors import (
+    DataConfigurationError,
     DataCapabilityError,
     SqlConnectionMissingError,
     SqlRegistryMissingError,
 )
-from muscles_data.models import DataCapability, DataResourceConfig, LockHandle
-from muscles_data.ports import (
+from muscles.data.models import DataCapability, DataResourceConfig, LockHandle
+from muscles.data.ports import (
     DocumentStorePort,
     KeyValuePort,
     LockPort,
@@ -34,7 +35,7 @@ from muscles_data.ports import (
     StreamPort,
     VectorSearchPort,
 )
-from muscles_data.runtime import DataRuntime
+from muscles.data.runtime import DataRuntime
 
 
 class CountingVectorFactory:
@@ -126,6 +127,32 @@ def test_config_parser_accepts_resources_and_redacts_secrets():
     assert config.resources["cache.default"].type == "memory_kv"
     assert config.resources["cache.default"].safe_options()["token"] == "***"
     assert config.resources["search.docs"].safe_options()["url"] == "***"
+
+
+def test_resource_config_resolves_canonical_url_env_lazily_without_exposing_value(monkeypatch):
+    monkeypatch.setenv("ELASTICSEARCH_URL", "https://user:secret@elastic.example")
+    config = DataConfig.from_raw(
+        {
+            "data": {
+                "resources": {
+                    "search.elastic": {
+                        "type": "elasticsearch",
+                        "url_env": "ELASTICSEARCH_URL",
+                        "index": "docs",
+                    }
+                }
+            }
+        }
+    )
+    resource = config.resources["search.elastic"]
+
+    assert resource.resolved_options()["url"] == "https://user:secret@elastic.example"
+    assert resource.safe_options()["url_env"] == "***"
+    assert "secret" not in repr(resource.safe_options())
+
+    monkeypatch.delenv("ELASTICSEARCH_URL")
+    with pytest.raises(DataConfigurationError, match="ELASTICSEARCH_URL"):
+        resource.resolved_options()
 
 
 def test_catalog_rejects_duplicate_factory():
@@ -336,6 +363,15 @@ def test_sql_doctor_handles_partial_failure_safely():
     assert "secret" not in repr(doctor)
 
 
+def test_health_result_exposes_stable_diagnostic_code():
+    runtime = DataRuntime(config=DataConfig.from_raw(_config()), catalog=DataAdapterCatalog.with_defaults())
+
+    doctor = runtime.doctor()
+    broken = [check for check in doctor["checks"] if check["resource"] == "broken.one"][0]
+
+    assert broken["code"] == "adapter_not_found"
+
+
 
 def test_runtime_close_is_idempotent():
     runtime = DataRuntime(config=DataConfig.from_raw(_config()), catalog=DataAdapterCatalog.with_defaults())
@@ -349,15 +385,15 @@ def test_runtime_close_is_idempotent():
 
 
 def test_data_source_does_not_import_vendor_or_ai_packages():
-    source_root = __import__("pathlib").Path(__file__).resolve().parents[1] / "src" / "muscles_data"
+    source_root = __import__("pathlib").Path(__file__).resolve().parents[1] / "src" / "muscles" / "data"
     core_text = "\n".join(
         path.read_text(encoding="utf-8")
         for path in source_root.rglob("*.py")
     )
 
     for marker in (
-        "muscles_ai",
-        "muscles_otel",
+        "muscles.ai",
+        "muscles.otel",
         "pymongo",
         "boto3",
         "qdrant_client",
@@ -383,7 +419,7 @@ def test_default_catalog_keeps_vendor_adapters_external():
 
 
 def test_package_public_exports():
-    import muscles_data as md
+    import muscles.data as md
 
     assert md.DataRuntime
     assert md.DataCapability

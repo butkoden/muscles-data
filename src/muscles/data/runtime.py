@@ -10,14 +10,20 @@ from .errors import DataAdapterNotFoundError, DataCapabilityError, DataResourceN
 from .models import DataCapability, HealthResult, InspectResult, serialize_capabilities, serialize_safe_capabilities
 from .ports import (
     DocumentStorePort,
+    EventConsumerPort,
+    EventPublisherPort,
+    EventStorePort,
     KeyValuePort,
     LockPort,
     ObjectStorePort,
     SearchIndexPort,
     SqlResourcePort,
+    SqlTransactionPort,
     StreamPort,
     VectorSearchPort,
 )
+from .policies import DataPolicyPipeline
+from .migrations import MigrationRegistry
 
 
 PORT_CAPABILITIES: dict[type, set[DataCapability]] = {
@@ -27,8 +33,12 @@ PORT_CAPABILITIES: dict[type, set[DataCapability]] = {
     KeyValuePort: {DataCapability.KEY_VALUE},
     LockPort: {DataCapability.LOCK},
     StreamPort: {DataCapability.STREAM},
+    EventPublisherPort: {DataCapability.EVENT_PUBLISH},
+    EventConsumerPort: {DataCapability.EVENT_SUBSCRIBE},
+    EventStorePort: {DataCapability.EVENT_STORE},
     DocumentStorePort: {DataCapability.DOCUMENT_STORE},
     SqlResourcePort: {DataCapability.SQL_SESSION},
+    SqlTransactionPort: {DataCapability.SQL_TRANSACTION},
 }
 
 
@@ -123,9 +133,18 @@ class DataResourceHandle:
 
 
 class DataRuntime:
-    def __init__(self, *, config: DataConfig, catalog: DataAdapterCatalog | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        config: DataConfig,
+        catalog: DataAdapterCatalog | None = None,
+        policies: DataPolicyPipeline | None = None,
+        migrations: MigrationRegistry | None = None,
+    ) -> None:
         self.config = config
         self.catalog = catalog or DataAdapterCatalog.with_defaults()
+        self.policies = policies or DataPolicyPipeline()
+        self.migrations = migrations if migrations is not None else MigrationRegistry()
         self._handles: dict[str, DataResourceHandle] = {}
         self._lock = threading.RLock()
         self._closed = False
@@ -153,6 +172,15 @@ class DataRuntime:
                 )
             return handle.as_port(port_type)
         return self.require_resource(name).as_port(port_type)
+
+    def connect(self, name: str, port_type: type):
+        """Resolve a configured resource as a port without forcing backend I/O.
+
+        The resource adapter is initialized lazily and reused by this runtime.
+        Adapters may defer opening their external connection until the returned
+        port performs its first operation.
+        """
+        return self.require_port(name, port_type)
 
     def require_resource(self, name: str, capability: DataCapability | None = None) -> DataResourceHandle:
         if name not in self.config.resources:
@@ -204,6 +232,7 @@ class DataRuntime:
                         "resource": name,
                         "type": resource.type,
                         "status": "failed",
+                        "code": "adapter_not_found",
                         "reason": "adapter_factory_not_found",
                     }
                 )
@@ -216,6 +245,7 @@ class DataRuntime:
                     "resource": name,
                     "type": resource.type,
                     "status": health.get("status", "ok"),
+                    "code": health.get("code"),
                     "message": health.get("message"),
                 }
             )

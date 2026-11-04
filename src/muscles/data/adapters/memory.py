@@ -2,13 +2,29 @@ from __future__ import annotations
 
 import math
 import time
+import uuid
 from dataclasses import asdict
 from pathlib import PurePosixPath
 from typing import Any, Mapping
 
 from ..config import DataResourceConfig
 from ..errors import SqlConnectionMissingError, SqlRegistryMissingError
-from ..models import DataCapability, HealthResult, InspectResult, ObjectBlob, ObjectInfo, SearchHit, VectorHit, WriteResult, redact_mapping
+from ..models import (
+    DataCapability,
+    DataEventAckResult,
+    DataEventEnvelope,
+    DataEventPublishResult,
+    DataEventReadResult,
+    HealthResult,
+    InspectResult,
+    ObjectBlob,
+    ObjectInfo,
+    SearchHit,
+    VectorHit,
+    WriteResult,
+    event_to_mapping,
+    redact_mapping,
+)
 
 
 def _native_capability(config: DataResourceConfig) -> set[DataCapability]:
@@ -119,14 +135,25 @@ class InMemorySearchIndexAdapter(_MemoryAdapterBase):
             haystack = text.lower()
             if query_text in haystack:
                 score = haystack.count(query_text) + (1.0 / max(1, len(text)))
-                hits.append(SearchHit(id=document_id, score=score, text=text, metadata=dict(metadata)))
+                hits.append(
+                    SearchHit(
+                        id=document_id,
+                        score=score,
+                        text=text,
+                        title=str(metadata["title"]) if metadata.get("title") is not None else None,
+                        metadata=dict(metadata),
+                    )
+                )
         return sorted(hits, key=lambda hit: hit.score, reverse=True)[: max(0, limit)]
 
     def upsert_documents(self, items: list[Mapping[str, Any]], options: Mapping[str, Any] | None = None) -> WriteResult:
         del options
         for item in items:
             document_id = str(item["id"])
-            self._documents[document_id] = (str(item.get("text", "")), dict(item.get("metadata", {}) or {}))
+            metadata = dict(item.get("metadata", {}) or {})
+            if item.get("title") is not None:
+                metadata.setdefault("title", item["title"])
+            self._documents[document_id] = (str(item.get("text", "")), metadata)
         return WriteResult(written=len(items), matched=len(items))
 
     def delete_documents(
@@ -238,6 +265,122 @@ class InMemoryKeyValueAdapter(_MemoryAdapterBase):
         _value, expires_at = item
         if expires_at is not None and expires_at <= time.monotonic():
             self._values.pop(key, None)
+
+
+class InMemoryEventAdapter(_MemoryAdapterBase):
+    """Small event transport used by tests and local examples."""
+
+    resource_type = "memory_event"
+
+    def __init__(self, config: DataResourceConfig) -> None:
+        super().__init__(config)
+        self._streams: dict[str, list[dict[str, Any]]] = {}
+
+    def publish_event(
+        self,
+        stream: str,
+        event: DataEventEnvelope | Mapping[str, Any],
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventPublishResult:
+        del options
+        event_mapping = event_to_mapping(event)
+        event_id = str(event_mapping.get("id") or uuid.uuid4())
+        event_mapping["id"] = event_id
+        message_id = str(uuid.uuid4())
+        self._streams.setdefault(stream, []).append(
+            {
+                "message_id": message_id,
+                "event_id": event_id,
+                "event": event_mapping,
+                "acked_by": set(),
+            }
+        )
+        return DataEventPublishResult(
+            event_id=event_id,
+            stream=stream,
+            message_id=message_id,
+            published=True,
+        )
+
+    def read_events(
+        self,
+        stream: str,
+        cursor: str | None = None,
+        limit: int = 100,
+        consumer: str | None = None,
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventReadResult:
+        del options
+        start = _event_cursor(cursor)
+        consumer_key = consumer or "__anonymous__"
+        messages = self._streams.get(stream, [])
+        events: list[dict[str, Any]] = []
+        next_cursor = start
+        if limit <= 0:
+            return DataEventReadResult(events=[], cursor=str(next_cursor), count=0)
+        for index in range(start, len(messages)):
+            message = messages[index]
+            next_cursor = index + 1
+            if consumer_key in message["acked_by"]:
+                continue
+            event = dict(message["event"])
+            event["message_id"] = message["message_id"]
+            events.append(event)
+            if len(events) >= limit:
+                break
+        return DataEventReadResult(events=events, cursor=str(next_cursor), count=len(events))
+
+    def ack_event(
+        self,
+        stream: str,
+        message_id: str,
+        consumer: str | None = None,
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventAckResult:
+        del options
+        consumer_key = consumer or "__anonymous__"
+        for message in self._streams.get(stream, []):
+            if message["message_id"] != message_id:
+                continue
+            message["acked_by"].add(consumer_key)
+            return DataEventAckResult(
+                event_id=message["event_id"],
+                message_id=message_id,
+                acked=True,
+            )
+        return DataEventAckResult(
+            status="failed",
+            message_id=message_id,
+            acked=False,
+            errors=[f"event message '{message_id}' was not found"],
+        )
+
+    def append_event(
+        self,
+        stream: str,
+        event: DataEventEnvelope | Mapping[str, Any],
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventPublishResult:
+        return self.publish_event(stream, event, options)
+
+    def load_events(
+        self,
+        stream: str,
+        cursor: str | None = None,
+        limit: int = 100,
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventReadResult:
+        return self.read_events(stream, cursor, limit, options=options)
+
+    def inspect(self) -> dict[str, Any]:
+        report = super().inspect()
+        report["details"].update(
+            {
+                "streams": len(self._streams),
+                "events": sum(len(messages) for messages in self._streams.values()),
+            }
+        )
+        return report
 
 
 class InMemoryDocumentStoreAdapter(_MemoryAdapterBase):
@@ -386,6 +529,21 @@ class InMemoryDocumentStoreFactory:
         return InMemoryDocumentStoreAdapter(config)
 
 
+class InMemoryEventFactory:
+    resource_type = "memory_event"
+
+    def capabilities(self, config: DataResourceConfig) -> set[DataCapability]:
+        return {
+            DataCapability.EVENT_PUBLISH,
+            DataCapability.EVENT_SUBSCRIBE,
+            DataCapability.EVENT_STORE,
+            DataCapability.HEALTHCHECK,
+        } | _native_capability(config)
+
+    def create(self, config: DataResourceConfig) -> InMemoryEventAdapter:
+        return InMemoryEventAdapter(config)
+
+
 class SqlBridgeFactory:
     resource_type = "sql"
 
@@ -412,6 +570,15 @@ def _cosine(left: list[float], right: list[float]) -> float:
 
 def _matches(payload: Mapping[str, Any], filters: Mapping[str, Any]) -> bool:
     return all(payload.get(key) == value for key, value in filters.items())
+
+
+def _event_cursor(cursor: str | None) -> int:
+    if cursor is None:
+        return 0
+    try:
+        return max(0, int(cursor))
+    except (TypeError, ValueError):
+        return 0
 
 
 def _redact_sql_report(report: Mapping[str, Any]) -> dict[str, Any]:

@@ -22,9 +22,12 @@ or require an explicit native-client escape hatch.
 - `KeyValuePort` — cache/key-value get/set/delete/exists with TTL support.
 - `LockPort` — short-lived distributed locks with owner-token validation.
 - `StreamPort` — minimal publish/read/ack stream contract.
+- `EventPublisherPort` — publish a semantic event envelope to a named stream.
+- `EventConsumerPort` — read event messages and acknowledge processing.
+- `EventStorePort` — append and load events as a journal of facts.
 - `DocumentStorePort` — simple document DB get/upsert/find/delete.
 - `SqlResourcePort` — bridge contract to SQL resources; SQL lifecycle remains in
-  `muscles-sql`, a project registry or a registered adapter.
+  `muscles-data-sql`, a project registry or a registered adapter.
 
 ## Core Adapters
 
@@ -34,6 +37,7 @@ Core registers only lightweight adapters that have no vendor SDK dependency:
 - `memory_search` -> `SearchIndexPort`;
 - `memory_object` -> `ObjectStorePort`;
 - `memory_kv` -> `KeyValuePort`, `LockPort`, `StreamPort`;
+- `memory_event` -> `EventPublisherPort`, `EventConsumerPort`, `EventStorePort`;
 - `memory_document` -> `DocumentStorePort`;
 - `sql` -> `SqlResourcePort` bridge to a supplied SQL registry.
 
@@ -41,13 +45,32 @@ Core registers only lightweight adapters that have no vendor SDK dependency:
 Elasticsearch, OpenSearch, Redis, Qdrant, MongoDB, S3 or SQLAlchemy. Those
 factories live in separate adapter packages.
 
-## SQL Bridge
+## SQL Resources
 
-`SqlResourcePort` exists so framework packages can ask for SQL as a named data
-resource without importing SQLAlchemy or duplicating `muscles-sql`:
+The application configures the native SQL adapter from `muscles-data-sql` once
+in its composition root, declares the resource once under `data.resources`,
+and resolves `SqlTransactionPort` from the shared runtime:
 
 ```python
-sql = runtime.require_port("sql.main", SqlResourcePort)
+from muscles.data.ports import SqlTransactionPort
+
+sql = app.resource.connect("database", SqlTransactionPort)
+with sql.transaction() as tx:
+    tx.execute("SELECT 1")
+```
+
+See the `muscles-data-sql` README for the `App` composition-root setup.
+
+### Optional SQLAlchemy Session Bridge
+
+`SqlResourcePort` exists so framework packages can ask for SQL as a named data
+resource without importing SQLAlchemy. The bridge works only if the composition
+root supplies a registry provider to
+`DataAdapterCatalog.with_defaults(sql_registry_provider=...)`; the default
+catalog does not configure one:
+
+```python
+sql = app.resource.connect("sql.main", SqlResourcePort)
 with sql.session() as session:
     ...
 ```
@@ -63,9 +86,9 @@ data:
       role: read_write
 ```
 
-`connection` is required and must point to a named connection managed by
-`muscles-sql` or a compatible project registry. Diagnostics redact raw `url` and
-`dsn` fields while preserving already-safe fields such as `safe_url`.
+`connection` is required and must point to a named connection in the supplied
+registry. Diagnostics redact raw `url` and `dsn` fields while preserving
+already-safe fields such as `safe_url`.
 
 Supported methods:
 
@@ -85,11 +108,11 @@ core contract stays the same: install/register an adapter package in the
 project composition root, then use a typed port in framework/use-case code.
 
 ```python
-from muscles_data.catalog import DataAdapterCatalog
-from muscles_data_elasticsearch import ElasticsearchSearchFactory
-from muscles_data_mongodb import MongoDocumentStoreFactory
-from muscles_data_qdrant import QdrantVectorFactory
-from muscles_data_s3 import S3ObjectStoreFactory
+from muscles.data.catalog import DataAdapterCatalog
+from muscles.data.elasticsearch import ElasticsearchSearchFactory
+from muscles.data.mongodb import MongoDocumentStoreFactory
+from muscles.data.qdrant import QdrantVectorFactory
+from muscles.data.s3 import S3ObjectStoreFactory
 
 catalog = DataAdapterCatalog.with_defaults()
 catalog.register(ElasticsearchSearchFactory())
@@ -144,6 +167,31 @@ External adapters must follow the same rule: listing resources and package init
 must not open database/network connections. Real clients are created only by
 port operations, explicit native access or `data.doctor`.
 
+## Event schema versus transport
+
+`DataEventEnvelope` is the canonical core schema for a data fact. It carries
+identity, event type, source, subject, schema version, operation, payload and
+causation/correlation metadata. Domain projects own their payload schemas and
+event types.
+
+`StreamPort` is a transport primitive. The event ports provide event semantics
+on top of a backend and may be implemented using a stream, queue or event log.
+The core package does not import Kafka, Redis, NATS or another vendor client.
+
+Outbox and inbox are future extensions. They require a transactional boundary
+and are not implied by publishing through an event port.
+
+Network-backed resources use an environment-variable name as the canonical
+endpoint configuration:
+
+```yaml
+url_env: ELASTICSEARCH_URL
+```
+
+The value is resolved lazily when a client is created and is never included in
+safe inspection or doctor output. Adapter registration remains manual so the
+core package does not import optional vendor SDKs.
+
 ## Diagnostics
 
 Diagnostics are safe by default:
@@ -157,6 +205,11 @@ Diagnostics are safe by default:
 Adapter packages may add backend-specific health checks, but they must not leak
 credentials or raw payloads in `inspect()` or `doctor()` output.
 
+Health reports use stable codes such as `ok`, `configuration_error`,
+`connection_failed`, `resource_missing` and `schema_mismatch`. Reusable
+port-only checks are available from `muscles.data.contracts` for adapter
+authors.
+
 ## Native Escape Hatch
 
 The preferred path is always a typed port. A project may explicitly request a
@@ -164,7 +217,7 @@ native/internal backend handle only when the resource declares the
 `native_client` capability:
 
 ```python
-from muscles_data import DataCapability
+from muscles.data import DataCapability
 
 handle = runtime.require_resource("search.docs", DataCapability.NATIVE_CLIENT)
 native = handle.native_client()
@@ -179,10 +232,20 @@ clients.
 Projects may register their own factories in `DataAdapterCatalog`:
 
 ```python
+from muscles.data import DataConfig, DataRuntime
+from muscles.data.catalog import DataAdapterCatalog
+
 catalog = DataAdapterCatalog.with_defaults()
 catalog.register(ProjectSearchFactory())
+config = DataConfig.from_raw({
+    "resources": {
+        "search.project": {"type": "project_search", "index": "docs"},
+    },
+})
 runtime = DataRuntime(config=config, catalog=catalog)
 ```
 
-The factory is responsible for translating the typed port into backend-specific
-client calls. Vendor dependencies remain inside the adapter module.
+`ProjectSearchFactory` is the application-defined factory registered above;
+its `resource_type` must match the `type` in the resource config. The factory is
+responsible for translating the typed port into backend-specific client calls.
+Vendor dependencies remain inside the adapter module.

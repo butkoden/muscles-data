@@ -6,6 +6,16 @@ from typing import Any
 from .actions import register_data_actions
 from .catalog import DataAdapterCatalog
 from .config import DataConfig
+from .models import (
+    DataEventAckRequest,
+    DataEventAckResult,
+    DataEventEnvelope,
+    DataEventPublishRequest,
+    DataEventPublishResult,
+    DataEventReadRequest,
+    DataEventReadResult,
+    DataEventSchemaRef,
+)
 from .runtime import DataRuntime
 
 
@@ -37,6 +47,7 @@ class DataPackage:
 
     def init(self, app, config):
         runtime = self.build_runtime(app, config or {})
+        register_data_schemas(app)
         _apply_services(app, self.services(app, runtime))
         self.actions(app, runtime, config=config)
         return runtime
@@ -44,6 +55,7 @@ class DataPackage:
 
 def init_package(app, config):
     package = DataPackage()
+    register_data_schemas(app)
     installable = _resolve_install_hook()
     if installable is not None:
         try:
@@ -51,6 +63,36 @@ def init_package(app, config):
         except Exception:
             pass
     return package.init(app, config or {})
+
+
+def register_data_schemas(app) -> None:
+    """Expose canonical event schemas through the Muscles inspection registry."""
+
+    try:
+        from muscles import get_application_registry
+    except Exception:  # pragma: no cover - compatibility with older core imports
+        from muscles.core import get_application_registry
+
+    registry = get_application_registry(app)
+    registered_names = {
+        name
+        for schema in registry.schemas
+        if isinstance(schema, dict)
+        for name in schema
+    }
+    for schema_type in (
+        DataEventEnvelope,
+        DataEventSchemaRef,
+        DataEventPublishRequest,
+        DataEventPublishResult,
+        DataEventReadRequest,
+        DataEventReadResult,
+        DataEventAckRequest,
+        DataEventAckResult,
+    ):
+        if schema_type.__name__ not in registered_names:
+            registry.add_schema(schema_type().dump())
+            registered_names.add(schema_type.__name__)
 
 
 def _normalize_config(config) -> DataConfig:
@@ -127,7 +169,7 @@ def _sql_registry_provider(app):
         if container is None:
             return None
         try:
-            from muscles_sql import SqlConnectionRegistry  # type: ignore[import-not-found]
+            from muscles.data.sql import SqlConnectionRegistry  # type: ignore[import-not-found]
         except Exception:
             SqlConnectionRegistry = None  # type: ignore[assignment]
         if SqlConnectionRegistry is not None:
@@ -158,5 +200,11 @@ class _LegacyContainer:
         if inspect.isclass(provider):
             return provider(*args, **kwargs)
         if callable(provider):
-            return provider(*args, **kwargs)
+            try:
+                return provider(*args, **kwargs)
+            except TypeError as exc:
+                if "unexpected keyword argument 'scope'" not in str(exc):
+                    raise
+                kwargs = {key: value for key, value in kwargs.items() if key != "scope"}
+                return provider(*args, **kwargs)
         return provider

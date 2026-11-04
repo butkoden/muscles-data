@@ -1,8 +1,18 @@
 from __future__ import annotations
 
-from typing import Any, Mapping, Protocol, runtime_checkable
+from typing import Any, ContextManager, Mapping, Protocol, runtime_checkable
 
-from .models import HealthResult, ObjectBlob, ObjectInfo, StreamReadResult, WriteResult
+from .models import (
+    DataEventAckResult,
+    DataEventEnvelope,
+    DataEventPublishResult,
+    DataEventReadResult,
+    HealthResult,
+    ObjectBlob,
+    ObjectInfo,
+    StreamReadResult,
+    WriteResult,
+)
 
 
 @runtime_checkable
@@ -97,6 +107,54 @@ class StreamPort(Protocol):
 
 
 @runtime_checkable
+class EventPublisherPort(Protocol):
+    def publish_event(
+        self,
+        stream: str,
+        event: DataEventEnvelope | Mapping[str, Any],
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventPublishResult | Mapping[str, Any]: ...
+
+
+@runtime_checkable
+class EventConsumerPort(Protocol):
+    def read_events(
+        self,
+        stream: str,
+        cursor: str | None = None,
+        limit: int = 100,
+        consumer: str | None = None,
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventReadResult | Mapping[str, Any]: ...
+
+    def ack_event(
+        self,
+        stream: str,
+        message_id: str,
+        consumer: str | None = None,
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventAckResult | Mapping[str, Any]: ...
+
+
+@runtime_checkable
+class EventStorePort(Protocol):
+    def append_event(
+        self,
+        stream: str,
+        event: DataEventEnvelope | Mapping[str, Any],
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventPublishResult | Mapping[str, Any]: ...
+
+    def load_events(
+        self,
+        stream: str,
+        cursor: str | None = None,
+        limit: int = 100,
+        options: Mapping[str, Any] | None = None,
+    ) -> DataEventReadResult | Mapping[str, Any]: ...
+
+
+@runtime_checkable
 class DocumentStorePort(Protocol):
     def get_document(self, collection: str, document_id: str) -> Mapping[str, Any] | None: ...
 
@@ -124,6 +182,20 @@ class SqlResourcePort(Protocol):
     def inspect(self) -> Mapping[str, Any]: ...
 
     def doctor(self) -> Mapping[str, Any]: ...
+
+
+@runtime_checkable
+class SqlTransaction(Protocol):
+    def execute(self, sql: str, parameters: Any = None) -> int: ...
+
+    def fetch_all(self, sql: str, parameters: Any = None) -> list[dict[str, Any]]: ...
+
+    def fetch_one(self, sql: str, parameters: Any = None) -> dict[str, Any] | None: ...
+
+
+@runtime_checkable
+class SqlTransactionPort(Protocol):
+    def transaction(self) -> ContextManager[SqlTransaction]: ...
 
 
 @runtime_checkable

@@ -1,0 +1,3224 @@
+{
+  "version": "1.0.0",
+  "schema_version": 1,
+  "project": {
+    "name": "muscles-data",
+    "is_monorepo": false,
+    "total_files": 29,
+    "entry_points": [],
+    "tech_stack": [
+      {
+        "name": "SQLAlchemy",
+        "version": null,
+        "category": "database"
+      },
+      {
+        "name": "Python",
+        "version": null,
+        "category": "language"
+      }
+    ],
+    "entry_candidates": [],
+    "graph_mode": "flow"
+  },
+  "nodes": [
+    {
+      "id": "class:src/muscles_data/config.py:DataConfig",
+      "type": "class",
+      "filePath": "src/muscles_data/config.py",
+      "name": "DataConfig",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:AdapterInitError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "AdapterInitError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:DataAdapterNotFoundError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "DataAdapterNotFoundError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:DataAuthenticationError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "DataAuthenticationError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:DataCapabilityError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "DataCapabilityError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:DataConfigurationError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "DataConfigurationError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:DataConnectionError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "DataConnectionError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:DataError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "DataError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:DataResourceMissingError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "DataResourceMissingError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:DataResourceNotFoundError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "DataResourceNotFoundError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:DataSchemaMismatchError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "DataSchemaMismatchError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:DataTimeoutError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "DataTimeoutError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:DataUnsupportedOperationError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "DataUnsupportedOperationError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:DataVectorDimensionError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "DataVectorDimensionError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:SqlConnectionMissingError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "SqlConnectionMissingError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/errors.py:SqlRegistryMissingError",
+      "type": "class",
+      "filePath": "src/muscles_data/errors.py",
+      "name": "SqlRegistryMissingError",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:DataCapability",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "DataCapability",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:DataEventAckRequest",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "DataEventAckRequest",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:DataEventAckResult",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "DataEventAckResult",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:DataEventEnvelope",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "DataEventEnvelope",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:DataEventPublishRequest",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "DataEventPublishRequest",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:DataEventPublishResult",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "DataEventPublishResult",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:DataEventReadRequest",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "DataEventReadRequest",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:DataEventReadResult",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "DataEventReadResult",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:DataEventSchemaRef",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "DataEventSchemaRef",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:DataResourceConfig",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "DataResourceConfig",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:HealthResult",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "HealthResult",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:InspectResult",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "InspectResult",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:LockHandle",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "LockHandle",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:ObjectBlob",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "ObjectBlob",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:ObjectInfo",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "ObjectInfo",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:SearchHit",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "SearchHit",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:StreamReadResult",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "StreamReadResult",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:VectorHit",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "VectorHit",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/models.py:WriteResult",
+      "type": "class",
+      "filePath": "src/muscles_data/models.py",
+      "name": "WriteResult",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/ports.py:DataResourceAdapter",
+      "type": "class",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "DataResourceAdapter",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/ports.py:DocumentStorePort",
+      "type": "class",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "DocumentStorePort",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/ports.py:EventConsumerPort",
+      "type": "class",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "EventConsumerPort",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/ports.py:EventPublisherPort",
+      "type": "class",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "EventPublisherPort",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/ports.py:EventStorePort",
+      "type": "class",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "EventStorePort",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/ports.py:KeyValuePort",
+      "type": "class",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "KeyValuePort",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/ports.py:LockPort",
+      "type": "class",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "LockPort",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/ports.py:ObjectStorePort",
+      "type": "class",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "ObjectStorePort",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/ports.py:SearchIndexPort",
+      "type": "class",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "SearchIndexPort",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/ports.py:SqlResourcePort",
+      "type": "class",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "SqlResourcePort",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/ports.py:StreamPort",
+      "type": "class",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "StreamPort",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/ports.py:VectorSearchPort",
+      "type": "class",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "VectorSearchPort",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/runtime.py:DataResourceHandle",
+      "type": "class",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "DataResourceHandle",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "class:src/muscles_data/runtime.py:DataRuntime",
+      "type": "class",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "DataRuntime",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "file:.github/workflows/ci.yml",
+      "type": "pipeline",
+      "filePath": ".github/workflows/ci.yml",
+      "language": "yaml",
+      "symbolCount": 0,
+      "lineCount": 15,
+      "complexity": "simple",
+      "pagerank": 0.016139,
+      "communityId": 3,
+      "tags": [
+        "config",
+        "ci"
+      ],
+      "summary": "GitHub Actions CI/CD workflow definition."
+    },
+    {
+      "id": "file:.github/workflows/release.yml",
+      "type": "pipeline",
+      "filePath": ".github/workflows/release.yml",
+      "language": "yaml",
+      "symbolCount": 0,
+      "lineCount": 28,
+      "complexity": "simple",
+      "pagerank": 0.016139,
+      "communityId": 4,
+      "tags": [
+        "config",
+        "ci"
+      ],
+      "summary": "GitHub Actions CI/CD workflow definition."
+    },
+    {
+      "id": "file:CHANGELOG.md",
+      "type": "document",
+      "filePath": "CHANGELOG.md",
+      "language": "markdown",
+      "symbolCount": 0,
+      "lineCount": 5,
+      "complexity": "simple",
+      "pagerank": 0.016139,
+      "communityId": 5,
+      "tags": [],
+      "summary": "Release history and notable changes."
+    },
+    {
+      "id": "file:README.md",
+      "type": "document",
+      "filePath": "README.md",
+      "language": "markdown",
+      "symbolCount": 0,
+      "lineCount": 256,
+      "complexity": "moderate",
+      "pagerank": 0.016139,
+      "communityId": 6,
+      "tags": [],
+      "summary": "Project overview and entry point for new readers."
+    },
+    {
+      "id": "file:docs/integration 2.md",
+      "type": "document",
+      "filePath": "docs/integration 2.md",
+      "language": "markdown",
+      "symbolCount": 0,
+      "lineCount": 32,
+      "complexity": "simple",
+      "pagerank": 0.016139,
+      "communityId": 7,
+      "tags": [],
+      "summary": "Documentation: integration 2.md."
+    },
+    {
+      "id": "file:docs/integration.md",
+      "type": "document",
+      "filePath": "docs/integration.md",
+      "language": "markdown",
+      "symbolCount": 0,
+      "lineCount": 32,
+      "complexity": "simple",
+      "pagerank": 0.016139,
+      "communityId": 8,
+      "tags": [],
+      "summary": "Documentation: integration.md."
+    },
+    {
+      "id": "file:docs/ports-runtime.md",
+      "type": "document",
+      "filePath": "docs/ports-runtime.md",
+      "language": "markdown",
+      "symbolCount": 0,
+      "lineCount": 216,
+      "complexity": "moderate",
+      "pagerank": 0.016139,
+      "communityId": 9,
+      "tags": [],
+      "summary": "Documentation: ports-runtime.md."
+    },
+    {
+      "id": "file:examples/run_data_runtime.py",
+      "type": "file",
+      "filePath": "examples/run_data_runtime.py",
+      "language": "python",
+      "symbolCount": 1,
+      "lineCount": 49,
+      "complexity": "simple",
+      "pagerank": 0.016139,
+      "communityId": 0,
+      "tags": [],
+      "summary": "Docs & Tooling module run_data_runtime defining main.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:examples/run_sql_resource_port.py",
+      "type": "file",
+      "filePath": "examples/run_sql_resource_port.py",
+      "language": "python",
+      "symbolCount": 5,
+      "lineCount": 43,
+      "complexity": "moderate",
+      "pagerank": 0.016139,
+      "communityId": 1,
+      "tags": [],
+      "summary": "Docs & Tooling module run_sql_resource_port defining FakeSqlRegistry, session, session_factory.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:infra/docker-compose.integration 2.yml",
+      "type": "service",
+      "filePath": "infra/docker-compose.integration 2.yml",
+      "language": "yaml",
+      "symbolCount": 0,
+      "lineCount": 55,
+      "complexity": "simple",
+      "pagerank": 0.016139,
+      "communityId": 10,
+      "tags": [
+        "config",
+        "infra"
+      ],
+      "summary": "Infrastructure definition: docker-compose.integration 2.yml."
+    },
+    {
+      "id": "file:infra/docker-compose.integration.yml",
+      "type": "service",
+      "filePath": "infra/docker-compose.integration.yml",
+      "language": "yaml",
+      "symbolCount": 0,
+      "lineCount": 55,
+      "complexity": "simple",
+      "pagerank": 0.016139,
+      "communityId": 11,
+      "tags": [
+        "config",
+        "infra"
+      ],
+      "summary": "Infrastructure definition: docker-compose.integration.yml."
+    },
+    {
+      "id": "file:pyproject.toml",
+      "type": "config",
+      "filePath": "pyproject.toml",
+      "language": "toml",
+      "symbolCount": 0,
+      "lineCount": 37,
+      "complexity": "simple",
+      "pagerank": 0.016139,
+      "communityId": 12,
+      "tags": [
+        "config"
+      ],
+      "summary": "Python project metadata, dependencies, and build configuration."
+    },
+    {
+      "id": "file:src/muscles_data/__init__.py",
+      "type": "file",
+      "filePath": "src/muscles_data/__init__.py",
+      "language": "python",
+      "symbolCount": 3,
+      "lineCount": 120,
+      "complexity": "moderate",
+      "pagerank": 0.024713,
+      "communityId": 0,
+      "tags": [],
+      "summary": "Application module __init__ defining __getattr__, __dir__.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_data/actions.py",
+      "type": "file",
+      "filePath": "src/muscles_data/actions.py",
+      "language": "python",
+      "symbolCount": 12,
+      "lineCount": 112,
+      "complexity": "moderate",
+      "pagerank": 0.019478,
+      "communityId": 0,
+      "tags": [],
+      "summary": "Application module actions defining register_data_actions, _register_action, _runtime.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_data/adapters/__init__.py",
+      "type": "file",
+      "filePath": "src/muscles_data/adapters/__init__.py",
+      "language": "python",
+      "symbolCount": 1,
+      "lineCount": 1,
+      "complexity": "simple",
+      "pagerank": 0.016139,
+      "communityId": 13,
+      "tags": [],
+      "summary": "Application module __init__ (1 symbols).",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_data/adapters/memory.py",
+      "type": "file",
+      "filePath": "src/muscles_data/adapters/memory.py",
+      "language": "python",
+      "symbolCount": 82,
+      "lineCount": 542,
+      "complexity": "complex",
+      "pagerank": 0.034837,
+      "communityId": 1,
+      "tags": [],
+      "summary": "Application module memory defining _native_capability, _MemoryAdapterBase, __init__."
+    },
+    {
+      "id": "file:src/muscles_data/catalog.py",
+      "type": "file",
+      "filePath": "src/muscles_data/catalog.py",
+      "language": "python",
+      "symbolCount": 10,
+      "lineCount": 53,
+      "complexity": "moderate",
+      "pagerank": 0.036884,
+      "communityId": 1,
+      "tags": [],
+      "summary": "Application module catalog defining DataAdapterFactory, capabilities, create.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_data/config.py",
+      "type": "file",
+      "filePath": "src/muscles_data/config.py",
+      "language": "python",
+      "symbolCount": 3,
+      "lineCount": 47,
+      "complexity": "simple",
+      "pagerank": 0.066024,
+      "communityId": 1,
+      "tags": [],
+      "summary": "Application module config defining DataConfig, from_raw.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_data/contracts 2.py",
+      "type": "file",
+      "filePath": "src/muscles_data/contracts 2.py",
+      "language": "python",
+      "symbolCount": 5,
+      "lineCount": 75,
+      "complexity": "moderate",
+      "pagerank": 0.016139,
+      "communityId": 2,
+      "tags": [],
+      "summary": "Application module contracts 2 defining assert_search_index_contract, assert_vector_search_contract, assert_lock_contract."
+    },
+    {
+      "id": "file:src/muscles_data/contracts.py",
+      "type": "file",
+      "filePath": "src/muscles_data/contracts.py",
+      "language": "python",
+      "symbolCount": 9,
+      "lineCount": 134,
+      "complexity": "moderate",
+      "pagerank": 0.025284,
+      "communityId": 2,
+      "tags": [],
+      "summary": "Application module contracts defining assert_search_index_contract, assert_vector_search_contract, assert_lock_contract.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_data/errors.py",
+      "type": "file",
+      "filePath": "src/muscles_data/errors.py",
+      "language": "python",
+      "symbolCount": 15,
+      "lineCount": 44,
+      "complexity": "moderate",
+      "pagerank": 0.196615,
+      "communityId": 1,
+      "tags": [],
+      "summary": "Application module errors defining DataError, DataResourceNotFoundError, DataAdapterNotFoundError.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_data/models.py",
+      "type": "file",
+      "filePath": "src/muscles_data/models.py",
+      "language": "python",
+      "symbolCount": 28,
+      "lineCount": 247,
+      "complexity": "complex",
+      "pagerank": 0.176478,
+      "communityId": 2,
+      "tags": [],
+      "summary": "Application module models defining DataCapability, normalize_capability, serialize_capabilities.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_data/package.py",
+      "type": "file",
+      "filePath": "src/muscles_data/package.py",
+      "language": "python",
+      "symbolCount": 19,
+      "lineCount": 173,
+      "complexity": "complex",
+      "pagerank": 0.01964,
+      "communityId": 0,
+      "tags": [],
+      "summary": "Application module package defining DataPackage, build_runtime, services.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_data/ports.py",
+      "type": "file",
+      "filePath": "src/muscles_data/ports.py",
+      "language": "python",
+      "symbolCount": 48,
+      "lineCount": 133,
+      "complexity": "complex",
+      "pagerank": 0.058009,
+      "communityId": 2,
+      "tags": [],
+      "summary": "Application module ports defining VectorSearchPort, search_vectors, upsert_vectors.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:src/muscles_data/runtime.py",
+      "type": "file",
+      "filePath": "src/muscles_data/runtime.py",
+      "language": "python",
+      "symbolCount": 21,
+      "lineCount": 242,
+      "complexity": "complex",
+      "pagerank": 0.051538,
+      "communityId": 0,
+      "tags": [],
+      "summary": "Application module runtime defining DataResourceHandle, __init__, initialized.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:tests/test_contracts 2.py",
+      "type": "file",
+      "filePath": "tests/test_contracts 2.py",
+      "language": "python",
+      "symbolCount": 2,
+      "lineCount": 19,
+      "complexity": "simple",
+      "pagerank": 0.016139,
+      "communityId": 1,
+      "tags": [
+        "test"
+      ],
+      "summary": "Tests for contracts 2."
+    },
+    {
+      "id": "file:tests/test_contracts.py",
+      "type": "file",
+      "filePath": "tests/test_contracts.py",
+      "language": "python",
+      "symbolCount": 6,
+      "lineCount": 52,
+      "complexity": "moderate",
+      "pagerank": 0.016139,
+      "communityId": 1,
+      "tags": [
+        "test"
+      ],
+      "summary": "Tests for contracts.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:tests/test_data_runtime.py",
+      "type": "file",
+      "filePath": "tests/test_data_runtime.py",
+      "language": "python",
+      "symbolCount": 32,
+      "lineCount": 388,
+      "complexity": "complex",
+      "pagerank": 0.016139,
+      "communityId": 0,
+      "tags": [
+        "test"
+      ],
+      "summary": "Tests for data_runtime.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "file:tests/test_event_contracts.py",
+      "type": "file",
+      "filePath": "tests/test_event_contracts.py",
+      "language": "python",
+      "symbolCount": 10,
+      "lineCount": 137,
+      "complexity": "moderate",
+      "pagerank": 0.016139,
+      "communityId": 0,
+      "tags": [
+        "test"
+      ],
+      "summary": "Tests for event_contracts.",
+      "primaryOwner": "Denis Butko"
+    },
+    {
+      "id": "function:src/muscles_data/config.py:from_raw",
+      "type": "function",
+      "filePath": "src/muscles_data/config.py",
+      "name": "from_raw",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/models.py:_json_safe",
+      "type": "function",
+      "filePath": "src/muscles_data/models.py",
+      "name": "_json_safe",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/models.py:event_to_mapping",
+      "type": "function",
+      "filePath": "src/muscles_data/models.py",
+      "name": "event_to_mapping",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/models.py:normalize_capability",
+      "type": "function",
+      "filePath": "src/muscles_data/models.py",
+      "name": "normalize_capability",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/models.py:redact_mapping",
+      "type": "function",
+      "filePath": "src/muscles_data/models.py",
+      "name": "redact_mapping",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/models.py:resolved_options",
+      "type": "function",
+      "filePath": "src/muscles_data/models.py",
+      "name": "resolved_options",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/models.py:safe_options",
+      "type": "function",
+      "filePath": "src/muscles_data/models.py",
+      "name": "safe_options",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/models.py:serialize_capabilities",
+      "type": "function",
+      "filePath": "src/muscles_data/models.py",
+      "name": "serialize_capabilities",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/models.py:serialize_safe_capabilities",
+      "type": "function",
+      "filePath": "src/muscles_data/models.py",
+      "name": "serialize_safe_capabilities",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:ack",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "ack",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:ack_event",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "ack_event",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:acquire_lock",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "acquire_lock",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:append_event",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "append_event",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:close",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "close",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:connection_name",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "connection_name",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:delete",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "delete",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:delete_document",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "delete_document",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:delete_documents",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "delete_documents",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:delete_object",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "delete_object",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:delete_vectors",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "delete_vectors",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:doctor",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "doctor",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:exists",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "exists",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:find_documents",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "find_documents",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:get",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "get",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:get_document",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "get_document",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:get_object",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "get_object",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:health",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "health",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:inspect",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "inspect",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:list_objects",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "list_objects",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:load_events",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "load_events",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:publish",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "publish",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:publish_event",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "publish_event",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:put_object",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "put_object",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:read",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "read",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:read_events",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "read_events",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:release_lock",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "release_lock",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:search_text",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "search_text",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:search_vectors",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "search_vectors",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:session",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "session",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:session_factory",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "session_factory",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:set",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "set",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:upsert_document",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "upsert_document",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:upsert_documents",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "upsert_documents",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/ports.py:upsert_vectors",
+      "type": "function",
+      "filePath": "src/muscles_data/ports.py",
+      "name": "upsert_vectors",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:__init__",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "__init__",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:_capabilities_for",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "_capabilities_for",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:adapter",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "adapter",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:as_port",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "as_port",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:close",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "close",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:doctor",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "doctor",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:health",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "health",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:initialized",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "initialized",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:inspect",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "inspect",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:inspect_resource",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "inspect_resource",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:list_resources",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "list_resources",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:native_client",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "native_client",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:require_capability",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "require_capability",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:require_port",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "require_port",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    },
+    {
+      "id": "function:src/muscles_data/runtime.py:require_resource",
+      "type": "function",
+      "filePath": "src/muscles_data/runtime.py",
+      "name": "require_resource",
+      "language": "python",
+      "tags": [],
+      "summary": ""
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:examples/run_data_runtime.py",
+      "target": "file:src/muscles_data/__init__.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:examples/run_data_runtime.py",
+      "target": "file:src/muscles_data/ports.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:examples/run_data_runtime.py",
+      "target": "file:src/muscles_data/runtime.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:examples/run_sql_resource_port.py",
+      "target": "file:src/muscles_data/catalog.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:examples/run_sql_resource_port.py",
+      "target": "file:src/muscles_data/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:examples/run_sql_resource_port.py",
+      "target": "file:src/muscles_data/ports.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:examples/run_sql_resource_port.py",
+      "target": "file:src/muscles_data/runtime.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/__init__.py",
+      "target": "file:src/muscles_data/catalog.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/__init__.py",
+      "target": "file:src/muscles_data/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/__init__.py",
+      "target": "file:src/muscles_data/models.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/__init__.py",
+      "target": "file:src/muscles_data/package.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/__init__.py",
+      "target": "file:src/muscles_data/ports.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/__init__.py",
+      "target": "file:src/muscles_data/runtime.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/actions.py",
+      "target": "file:src/muscles_data/runtime.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/adapters/memory.py",
+      "target": "file:src/muscles_data/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/adapters/memory.py",
+      "target": "file:src/muscles_data/errors.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/adapters/memory.py",
+      "target": "file:src/muscles_data/models.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/catalog.py",
+      "target": "file:src/muscles_data/adapters/memory.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/catalog.py",
+      "target": "file:src/muscles_data/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/catalog.py",
+      "target": "file:src/muscles_data/errors.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/catalog.py",
+      "target": "file:src/muscles_data/models.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/config.py",
+      "target": "class:src/muscles_data/config.py:DataConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/config.py",
+      "target": "file:src/muscles_data/models.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/config.py",
+      "target": "function:src/muscles_data/config.py:from_raw",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/config.py::DataConfig",
+      "target": "function:src/muscles_data/config.py:from_raw",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/contracts 2.py",
+      "target": "file:src/muscles_data/models.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/contracts 2.py",
+      "target": "file:src/muscles_data/ports.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/contracts.py",
+      "target": "file:src/muscles_data/models.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/contracts.py",
+      "target": "file:src/muscles_data/ports.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:AdapterInitError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:DataAdapterNotFoundError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:DataAuthenticationError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:DataCapabilityError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:DataConfigurationError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:DataConnectionError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:DataError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:DataResourceMissingError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:DataResourceNotFoundError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:DataSchemaMismatchError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:DataTimeoutError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:DataUnsupportedOperationError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:DataVectorDimensionError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:SqlConnectionMissingError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/errors.py",
+      "target": "class:src/muscles_data/errors.py:SqlRegistryMissingError",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:DataCapability",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:DataEventAckRequest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:DataEventAckResult",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:DataEventEnvelope",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:DataEventPublishRequest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:DataEventPublishResult",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:DataEventReadRequest",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:DataEventReadResult",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:DataEventSchemaRef",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:DataResourceConfig",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:HealthResult",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:InspectResult",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:LockHandle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:ObjectBlob",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:ObjectInfo",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:SearchHit",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:StreamReadResult",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:VectorHit",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "class:src/muscles_data/models.py:WriteResult",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "file:src/muscles_data/errors.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "function:src/muscles_data/models.py:_json_safe",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "function:src/muscles_data/models.py:event_to_mapping",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "function:src/muscles_data/models.py:normalize_capability",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "function:src/muscles_data/models.py:redact_mapping",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "function:src/muscles_data/models.py:resolved_options",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "function:src/muscles_data/models.py:safe_options",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "function:src/muscles_data/models.py:serialize_capabilities",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py",
+      "target": "function:src/muscles_data/models.py:serialize_safe_capabilities",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py::DataResourceConfig",
+      "target": "function:src/muscles_data/models.py:resolved_options",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/models.py::DataResourceConfig",
+      "target": "function:src/muscles_data/models.py:safe_options",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/package.py",
+      "target": "file:src/muscles_data/actions.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/package.py",
+      "target": "file:src/muscles_data/catalog.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/package.py",
+      "target": "file:src/muscles_data/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/package.py",
+      "target": "file:src/muscles_data/models.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/package.py",
+      "target": "file:src/muscles_data/runtime.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "class:src/muscles_data/ports.py:DataResourceAdapter",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "class:src/muscles_data/ports.py:DocumentStorePort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "class:src/muscles_data/ports.py:EventConsumerPort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "class:src/muscles_data/ports.py:EventPublisherPort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "class:src/muscles_data/ports.py:EventStorePort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "class:src/muscles_data/ports.py:KeyValuePort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "class:src/muscles_data/ports.py:LockPort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "class:src/muscles_data/ports.py:ObjectStorePort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "class:src/muscles_data/ports.py:SearchIndexPort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "class:src/muscles_data/ports.py:SqlResourcePort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "class:src/muscles_data/ports.py:StreamPort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "class:src/muscles_data/ports.py:VectorSearchPort",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "file:src/muscles_data/models.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:ack",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:ack_event",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:acquire_lock",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:append_event",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:close",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:connection_name",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:delete",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:delete_document",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:delete_documents",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:delete_object",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:delete_vectors",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:doctor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:exists",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:find_documents",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:get",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:get_document",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:get_object",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:health",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:inspect",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:list_objects",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:load_events",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:publish",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:publish_event",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:put_object",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:read",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:read_events",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:release_lock",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:search_text",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:search_vectors",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:session",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:session_factory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:set",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:upsert_document",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:upsert_documents",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py",
+      "target": "function:src/muscles_data/ports.py:upsert_vectors",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::DataResourceAdapter",
+      "target": "function:src/muscles_data/ports.py:close",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::DataResourceAdapter",
+      "target": "function:src/muscles_data/ports.py:health",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::DataResourceAdapter",
+      "target": "function:src/muscles_data/ports.py:inspect",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::DocumentStorePort",
+      "target": "function:src/muscles_data/ports.py:delete_document",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::DocumentStorePort",
+      "target": "function:src/muscles_data/ports.py:find_documents",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::DocumentStorePort",
+      "target": "function:src/muscles_data/ports.py:get_document",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::DocumentStorePort",
+      "target": "function:src/muscles_data/ports.py:upsert_document",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::EventConsumerPort",
+      "target": "function:src/muscles_data/ports.py:ack_event",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::EventConsumerPort",
+      "target": "function:src/muscles_data/ports.py:read_events",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::EventPublisherPort",
+      "target": "function:src/muscles_data/ports.py:publish_event",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::EventStorePort",
+      "target": "function:src/muscles_data/ports.py:append_event",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::EventStorePort",
+      "target": "function:src/muscles_data/ports.py:load_events",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::KeyValuePort",
+      "target": "function:src/muscles_data/ports.py:delete",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::KeyValuePort",
+      "target": "function:src/muscles_data/ports.py:exists",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::KeyValuePort",
+      "target": "function:src/muscles_data/ports.py:get",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::KeyValuePort",
+      "target": "function:src/muscles_data/ports.py:set",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::LockPort",
+      "target": "function:src/muscles_data/ports.py:acquire_lock",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::LockPort",
+      "target": "function:src/muscles_data/ports.py:release_lock",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::ObjectStorePort",
+      "target": "function:src/muscles_data/ports.py:delete_object",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::ObjectStorePort",
+      "target": "function:src/muscles_data/ports.py:get_object",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::ObjectStorePort",
+      "target": "function:src/muscles_data/ports.py:list_objects",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::ObjectStorePort",
+      "target": "function:src/muscles_data/ports.py:put_object",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::SearchIndexPort",
+      "target": "function:src/muscles_data/ports.py:delete_documents",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::SearchIndexPort",
+      "target": "function:src/muscles_data/ports.py:search_text",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::SearchIndexPort",
+      "target": "function:src/muscles_data/ports.py:upsert_documents",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::SqlResourcePort",
+      "target": "function:src/muscles_data/ports.py:connection_name",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::SqlResourcePort",
+      "target": "function:src/muscles_data/ports.py:doctor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::SqlResourcePort",
+      "target": "function:src/muscles_data/ports.py:inspect",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::SqlResourcePort",
+      "target": "function:src/muscles_data/ports.py:session",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::SqlResourcePort",
+      "target": "function:src/muscles_data/ports.py:session_factory",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::StreamPort",
+      "target": "function:src/muscles_data/ports.py:ack",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::StreamPort",
+      "target": "function:src/muscles_data/ports.py:publish",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::StreamPort",
+      "target": "function:src/muscles_data/ports.py:read",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::VectorSearchPort",
+      "target": "function:src/muscles_data/ports.py:delete_vectors",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::VectorSearchPort",
+      "target": "function:src/muscles_data/ports.py:search_vectors",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/ports.py::VectorSearchPort",
+      "target": "function:src/muscles_data/ports.py:upsert_vectors",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "class:src/muscles_data/runtime.py:DataResourceHandle",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "class:src/muscles_data/runtime.py:DataRuntime",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "file:src/muscles_data/catalog.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "file:src/muscles_data/config.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "file:src/muscles_data/errors.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "file:src/muscles_data/models.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "file:src/muscles_data/ports.py",
+      "type": "imports",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:__init__",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:_capabilities_for",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:adapter",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:as_port",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:close",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:doctor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:health",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:initialized",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:inspect",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:inspect_resource",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:list_resources",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:native_client",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:require_capability",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:require_port",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py",
+      "target": "function:src/muscles_data/runtime.py:require_resource",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataResourceHandle",
+      "target": "function:src/muscles_data/runtime.py:__init__",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataResourceHandle",
+      "target": "function:src/muscles_data/runtime.py:adapter",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataResourceHandle",
+      "target": "function:src/muscles_data/runtime.py:as_port",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataResourceHandle",
+      "target": "function:src/muscles_data/runtime.py:close",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataResourceHandle",
+      "target": "function:src/muscles_data/runtime.py:health",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataResourceHandle",
+      "target": "function:src/muscles_data/runtime.py:initialized",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataResourceHandle",
+      "target": "function:src/muscles_data/runtime.py:inspect",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataResourceHandle",
+      "target": "function:src/muscles_data/runtime.py:native_client",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataResourceHandle",
+      "target": "function:src/muscles_data/runtime.py:require_capability",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataRuntime",
+      "target": "function:src/muscles_data/runtime.py:__init__",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataRuntime",
+      "target": "function:src/muscles_data/runtime.py:_capabilities_for",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataRuntime",
+      "target": "function:src/muscles_data/runtime.py:close",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataRuntime",
+      "target": "function:src/muscles_data/runtime.py:doctor",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataRuntime",
+      "target": "function:src/muscles_data/runtime.py:inspect",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataRuntime",
+      "target": "function:src/muscles_data/runtime.py:inspect_resource",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataRuntime",
+      "target": "function:src/muscles_data/runtime.py:list_resources",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataRuntime",
+      "target": "function:src/muscles_data/runtime.py:require_port",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:src/muscles_data/runtime.py::DataRuntime",
+      "target": "function:src/muscles_data/runtime.py:require_resource",
+      "type": "contains",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_contracts 2.py",
+      "target": "file:src/muscles_data/adapters/memory.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_contracts 2.py",
+      "target": "file:src/muscles_data/config.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_contracts 2.py",
+      "target": "file:src/muscles_data/contracts.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_contracts.py",
+      "target": "file:src/muscles_data/adapters/memory.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_contracts.py",
+      "target": "file:src/muscles_data/config.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_contracts.py",
+      "target": "file:src/muscles_data/contracts.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_data_runtime.py",
+      "target": "file:src/muscles_data/__init__.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_data_runtime.py",
+      "target": "file:src/muscles_data/adapters/memory.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_data_runtime.py",
+      "target": "file:src/muscles_data/catalog.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_data_runtime.py",
+      "target": "file:src/muscles_data/config.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_data_runtime.py",
+      "target": "file:src/muscles_data/errors.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_data_runtime.py",
+      "target": "file:src/muscles_data/models.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_data_runtime.py",
+      "target": "file:src/muscles_data/ports.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_data_runtime.py",
+      "target": "file:src/muscles_data/runtime.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_event_contracts.py",
+      "target": "file:src/muscles_data/__init__.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_event_contracts.py",
+      "target": "file:src/muscles_data/config.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_event_contracts.py",
+      "target": "file:src/muscles_data/errors.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_event_contracts.py",
+      "target": "file:src/muscles_data/models.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_event_contracts.py",
+      "target": "file:src/muscles_data/ports.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    },
+    {
+      "source": "file:tests/test_event_contracts.py",
+      "target": "file:src/muscles_data/runtime.py",
+      "type": "tested_by",
+      "direction": "forward",
+      "weight": 1.0
+    }
+  ],
+  "layers": [
+    {
+      "id": "layer:application",
+      "name": "Application",
+      "description": "",
+      "nodeIds": [
+        "file:CHANGELOG.md",
+        "file:README.md",
+        "file:infra/docker-compose.integration 2.yml",
+        "file:infra/docker-compose.integration.yml",
+        "file:pyproject.toml",
+        "file:src/muscles_data/__init__.py",
+        "file:src/muscles_data/actions.py",
+        "file:src/muscles_data/adapters/__init__.py",
+        "file:src/muscles_data/adapters/memory.py",
+        "file:src/muscles_data/catalog.py",
+        "file:src/muscles_data/config.py",
+        "file:src/muscles_data/contracts 2.py",
+        "file:src/muscles_data/contracts.py",
+        "file:src/muscles_data/errors.py",
+        "file:src/muscles_data/models.py",
+        "file:src/muscles_data/package.py",
+        "file:src/muscles_data/ports.py",
+        "file:src/muscles_data/runtime.py"
+      ],
+      "display_order": 0,
+      "order_basis": "canonical"
+    },
+    {
+      "id": "layer:config",
+      "name": "Config",
+      "description": "",
+      "nodeIds": [
+        "file:.github/workflows/ci.yml",
+        "file:.github/workflows/release.yml"
+      ],
+      "display_order": 1,
+      "order_basis": "canonical"
+    },
+    {
+      "id": "layer:docs-tooling",
+      "name": "Docs & Tooling",
+      "description": "",
+      "nodeIds": [
+        "file:docs/integration 2.md",
+        "file:docs/integration.md",
+        "file:docs/ports-runtime.md",
+        "file:examples/run_data_runtime.py",
+        "file:examples/run_sql_resource_port.py"
+      ],
+      "display_order": 2,
+      "order_basis": "canonical"
+    },
+    {
+      "id": "layer:test",
+      "name": "Test",
+      "description": "",
+      "nodeIds": [
+        "file:tests/test_contracts 2.py",
+        "file:tests/test_contracts.py",
+        "file:tests/test_data_runtime.py",
+        "file:tests/test_event_contracts.py"
+      ],
+      "display_order": 3,
+      "order_basis": "canonical"
+    }
+  ],
+  "tour": [
+    {
+      "order": 1,
+      "target_path": "README.md",
+      "page_type": "repo_overview",
+      "title": "README.md",
+      "depth": 0,
+      "kind": "overview",
+      "reason": "Start here for the end-to-end picture before diving into the code.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 2,
+      "target_path": "src/muscles_data/__init__.py",
+      "page_type": "file_page",
+      "title": "__init__.py",
+      "depth": 0,
+      "kind": "code",
+      "reason": "The walk's anchor \u2014 its imports fan out the widest in a repo with no single entry point.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 3,
+      "target_path": "src/muscles_data/models.py",
+      "page_type": "file_page",
+      "title": "models.py",
+      "depth": 1,
+      "kind": "code",
+      "reason": "Directly imported by the anchor above; a core collaborator.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 4,
+      "target_path": "src/muscles_data/config.py",
+      "page_type": "file_page",
+      "title": "config.py",
+      "depth": 1,
+      "kind": "code",
+      "reason": "Directly imported by the anchor above; a core collaborator.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 5,
+      "target_path": "src/muscles_data/ports.py",
+      "page_type": "file_page",
+      "title": "ports.py",
+      "depth": 1,
+      "kind": "code",
+      "reason": "Directly imported by the anchor above; a core collaborator.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 6,
+      "target_path": "src/muscles_data/runtime.py",
+      "page_type": "file_page",
+      "title": "runtime.py",
+      "depth": 1,
+      "kind": "code",
+      "reason": "Directly imported by the anchor above; a core collaborator.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 7,
+      "target_path": "src/muscles_data/catalog.py",
+      "page_type": "file_page",
+      "title": "catalog.py",
+      "depth": 1,
+      "kind": "code",
+      "reason": "Directly imported by the anchor above; a core collaborator.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 8,
+      "target_path": "src/muscles_data/package.py",
+      "page_type": "file_page",
+      "title": "package.py",
+      "depth": 1,
+      "kind": "code",
+      "reason": "Directly imported by the anchor above; a core collaborator.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 9,
+      "target_path": "src/muscles_data/errors.py",
+      "page_type": "file_page",
+      "title": "errors.py",
+      "depth": 2,
+      "kind": "code",
+      "reason": "Reached 2 imports deep \u2014 a supporting building block.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 10,
+      "target_path": "src/muscles_data/adapters/memory.py",
+      "page_type": "file_page",
+      "title": "memory.py",
+      "depth": 2,
+      "kind": "code",
+      "reason": "Reached 2 imports deep \u2014 a supporting building block.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 11,
+      "target_path": "src/muscles_data/actions.py",
+      "page_type": "file_page",
+      "title": "actions.py",
+      "depth": 2,
+      "kind": "code",
+      "reason": "Reached 2 imports deep \u2014 a supporting building block.",
+      "layer_id": "layer:application"
+    },
+    {
+      "order": 12,
+      "target_path": "tests/test_contracts 2.py",
+      "page_type": "file_page",
+      "title": "test_contracts 2.py",
+      "depth": 3,
+      "kind": "code",
+      "reason": "The test suite \u2014 how the system's behavior is verified.",
+      "layer_id": "layer:test"
+    }
+  ],
+  "modules": [
+    {
+      "id": "module:application",
+      "name": "Application",
+      "path": "",
+      "layerId": "layer:application",
+      "nodeIds": [
+        "file:CHANGELOG.md",
+        "file:README.md",
+        "file:infra/docker-compose.integration 2.yml",
+        "file:infra/docker-compose.integration.yml",
+        "file:pyproject.toml",
+        "file:src/muscles_data/__init__.py",
+        "file:src/muscles_data/actions.py",
+        "file:src/muscles_data/adapters/__init__.py",
+        "file:src/muscles_data/adapters/memory.py",
+        "file:src/muscles_data/catalog.py",
+        "file:src/muscles_data/config.py",
+        "file:src/muscles_data/contracts 2.py",
+        "file:src/muscles_data/contracts.py",
+        "file:src/muscles_data/errors.py",
+        "file:src/muscles_data/models.py",
+        "file:src/muscles_data/package.py",
+        "file:src/muscles_data/ports.py",
+        "file:src/muscles_data/runtime.py"
+      ],
+      "wholeLayer": true,
+      "language": "python"
+    },
+    {
+      "id": "module:docs-tooling",
+      "name": "Docs & Tooling",
+      "path": "",
+      "layerId": "layer:docs-tooling",
+      "nodeIds": [
+        "file:docs/integration 2.md",
+        "file:docs/integration.md",
+        "file:docs/ports-runtime.md",
+        "file:examples/run_data_runtime.py",
+        "file:examples/run_sql_resource_port.py"
+      ],
+      "wholeLayer": true,
+      "language": "markdown"
+    },
+    {
+      "id": "module:tests",
+      "name": "Test",
+      "path": "tests",
+      "layerId": "layer:test",
+      "nodeIds": [
+        "file:tests/test_contracts 2.py",
+        "file:tests/test_contracts.py",
+        "file:tests/test_data_runtime.py",
+        "file:tests/test_event_contracts.py"
+      ],
+      "wholeLayer": true,
+      "language": "python"
+    }
+  ]
+}
