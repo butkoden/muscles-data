@@ -10,10 +10,15 @@ Discovery imports package and migration modules; their top-level code must not
 connect, mutate data or run migrations.
 
 The owner package can keep Python modules named `m0001_*.py`, `m0002_*.py` in a
-migration package and discover them with `discover_migration_modules`. Discovery
-binds executed source bytes to their checksum and rejects modules imported
-elsewhere or changed afterwards; restart the process after edits. Version order
-is lexicographic, so use zero-padded revisions. See
+migration subpackage. `discover_migration_modules(pattern=...)` infers the owner
+package from the calling module. A pattern without a directory searches the
+`migrations` subpackage, for example `pattern="m000[0-9]_*.py"`. To select another
+directory, include it in the pattern: `pattern="migrate/000[0-9]_*.py"`. Only
+matching files are loaded. An explicit `package_name` remains available for
+callers outside the owner package. Discovery binds executed source bytes to their
+checksum and rejects modules imported elsewhere or changed afterwards; restart
+the process after edits. Version order is lexicographic, so use zero-padded
+revisions. See
 `muscles-data-sql/examples/native_migrations.py` for an executable SQLite example.
 
 `muscles-data` exposes registry operations but does not prescribe a universal
@@ -25,17 +30,22 @@ but connect to existing databases. Available plans are checked before any
 source is upgraded; a backend without `plan` cannot be preflighted. Review
 plans, backups, permissions and compatibility before mutating data.
 
-The SQL adapter's `NativeSqlMigrationSourceBackend` owns migration connections
-and is shared by package sources; packages do not create `SqlDatabase` instances.
+The Muscles registry builder creates a `NativeSqlMigrationSourceBackend` for
+each discovered source. It owns migration connections and delegates transactional
+execution to `NativeSqlMigrationBackend`; standalone low-level integrations may
+construct sources directly. Packages do not create `SqlDatabase` instances.
+For Muscles applications, `build_native_sql_migration_registry(packages,
+database_url)` centralizes registration: it discovers each installed package's
+`migrate` directory, creates sources from package namespaces, and derives ordering
+from package `dependencies`. Packages need no registration methods or separate
+migration dependency map.
 Native SQL migrations use one transaction for DDL and journal updates, with
 SQLite `BEGIN IMMEDIATE` or PostgreSQL transaction advisory locking. Each module
 declares `revision`, `dialects`, `upgrade(tx)` and optionally `downgrade(tx)`;
 `NativeSqlMigration.from_module` hashes its Python source. Changed, missing,
 unknown or out-of-order migrations block execution. The backend supports only
-transactional operations on SQLite and PostgreSQL. Applications register each SQL source with
-`NativeSqlMigrationSourceBackend` from `muscles-data-sql`; it manages a short-lived
-connection and delegates transactional execution to `NativeSqlMigrationBackend`. All SQL
-sources use the shared `muscles_data_migrations` journal. For a database
+transactional operations on SQLite and PostgreSQL. All SQL sources use the shared
+`muscles_data_migrations` journal. For a database
 previously managed by another migration mechanism, verify its schema and
 establish the initial journal state explicitly before running initial `CREATE
 TABLE` migrations.

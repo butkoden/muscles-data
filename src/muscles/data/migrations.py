@@ -1,12 +1,13 @@
 """Storage-neutral migration source registration and dependency ordering."""
 from dataclasses import dataclass
 from contextlib import nullcontext
+from fnmatch import fnmatchcase
 from importlib import import_module
 from importlib.util import find_spec, module_from_spec
 import hashlib
 from pathlib import Path
+from pathlib import PurePosixPath
 import pkgutil
-import re
 import sys
 from types import ModuleType
 from typing import Callable, ContextManager, Protocol
@@ -16,14 +17,50 @@ class MigrationBackend(Protocol):
     def upgrade(self, target: str = "head") -> None: ...
 
 
-def discover_migration_modules(package_name: str) -> tuple[ModuleType, ...]:
-    """Load owned Python migration files in name order, binding code to its checksum."""
+def discover_migration_modules(
+    package_name: str | None = None,
+    *,
+    pattern: str = "m[0-9]*.py",
+) -> tuple[ModuleType, ...]:
+    """Load matching Python migration files in name order, binding code to its checksum.
+
+    When ``package_name`` is omitted, the calling package is used. A filename
+    pattern without a directory searches its ``migrations`` subpackage; a
+    directory in ``pattern`` selects that subpackage, e.g. ``migrate/000[0-9]_*.py``.
+    ``package_name`` remains available for callers outside an owning package.
+    """
+    if not isinstance(pattern, str) or not pattern:
+        raise ValueError("A migration filename pattern is required")
+    relative_pattern = PurePosixPath(pattern)
+    if relative_pattern.is_absolute() or ".." in relative_pattern.parts:
+        raise ValueError("Migration pattern must be a relative package path")
+    filename_pattern = relative_pattern.name
+    module_pattern = filename_pattern[:-3] if filename_pattern.endswith(".py") else filename_pattern
+    if not module_pattern:
+        raise ValueError("A migration filename pattern is required")
+
+    if package_name is None:
+        caller_package = sys._getframe(1).f_globals.get("__package__")
+        if not isinstance(caller_package, str) or not caller_package:
+            raise ValueError("Could not infer the calling package for migration discovery")
+        package_name = caller_package
+        if not relative_pattern.parent.parts:
+            package_name = f"{package_name}.migrations"
+    if relative_pattern.parent.parts:
+        subpackage = ".".join(relative_pattern.parent.parts)
+        if any(not part.isidentifier() for part in relative_pattern.parent.parts):
+            raise ValueError("Migration pattern directories must be Python package names")
+        package_name = f"{package_name}.{subpackage}"
+
     package = import_module(package_name)
     paths = getattr(package, "__path__", None)
     if paths is None:
         raise ValueError("Migration module discovery requires a Python package")
-    names = sorted(item.name for item in pkgutil.iter_modules(paths)
-                   if not item.ispkg and re.match(r"^m[0-9]", item.name))
+    names = sorted(
+        item.name
+        for item in pkgutil.iter_modules(paths)
+        if not item.ispkg and fnmatchcase(item.name, module_pattern)
+    )
     modules = []
     for name in names:
         qualified = f"{package_name}.{name}"

@@ -147,3 +147,52 @@ def test_discovery_loads_only_ordered_migration_modules(monkeypatch, tmp_path):
     (package / "m001_first.py").write_text("revision = 'changed'\n", encoding="utf-8")
     with pytest.raises(ValueError, match="changed"):
         discover_migration_modules("sample_migrations")
+
+
+def test_discovery_accepts_custom_filename_pattern(monkeypatch, tmp_path):
+    package = tmp_path / "custom_migrations"
+    migration_package = package / "migrate"
+    migration_package.mkdir(parents=True)
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (migration_package / "__init__.py").write_text("", encoding="utf-8")
+    (migration_package / "0002_second.py").write_text("revision = '002'\n", encoding="utf-8")
+    (migration_package / "0001_first.py").write_text("revision = '001'\n", encoding="utf-8")
+    (migration_package / "helper.py").write_text(
+        "raise RuntimeError('must not be loaded')\n", encoding="utf-8"
+    )
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    modules = discover_migration_modules(
+        "custom_migrations.migrate", pattern="000[0-9]_*.py"
+    )
+
+    assert [module.revision for module in modules] == ["001", "002"]
+
+
+def test_discovery_infers_calling_package_and_migrations_directory(monkeypatch, tmp_path):
+    package = tmp_path / "inferred_migrations"
+    migrations = package / "migrations"
+    migrations.mkdir(parents=True)
+    custom_migrations = package / "migrate"
+    custom_migrations.mkdir()
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "loader.py").write_text(
+        "from muscles.data.migrations import discover_migration_modules\n"
+        "def load_default():\n"
+        "    return discover_migration_modules(pattern='m000[0-9]_*.py')\n"
+        "def load_custom():\n"
+        "    return discover_migration_modules(pattern='migrate/000[0-9]_*.py')\n",
+        encoding="utf-8",
+    )
+    (migrations / "__init__.py").write_text("", encoding="utf-8")
+    (migrations / "m0001_initial.py").write_text("revision = '001'\n", encoding="utf-8")
+    (custom_migrations / "__init__.py").write_text("", encoding="utf-8")
+    (custom_migrations / "0001_initial.py").write_text("revision = '001-custom'\n", encoding="utf-8")
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    from importlib import import_module
+
+    loader = import_module("inferred_migrations.loader")
+
+    assert [module.revision for module in loader.load_default()] == ["001"]
+    assert [module.revision for module in loader.load_custom()] == ["001-custom"]
