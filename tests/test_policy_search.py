@@ -2,7 +2,7 @@ import pytest
 
 from muscles.data.errors import DataBatchWriteError, DataPolicyDeniedError, DataUnsupportedOperationError, DataWriteConflictError
 from muscles.data.models import SearchHit, VectorHit, WriteResult
-from muscles.data.policies import DataNonAtomicPolicyMode, DataOperationContext, DataPolicyDecision, DataPolicyPipeline, DataPredicate, DataPredicateOperator
+from muscles.data.policies import DataNonAtomicPolicyMode, DataOperationContext, DataPolicyDecision, DataPolicyPipeline, DataPredicate, DataPredicateOperator, DataRelatedExists
 from muscles.data.policy_search import PolicySearchIndex, PolicyVectorSearch
 
 
@@ -41,6 +41,22 @@ def test_search_applies_policy_to_backend_and_rejects_array_results():
     store = PolicySearchIndex(backend, "articles", policies=DataPolicyPipeline((Policy(),)), context=DataOperationContext(attributes={"workspace": "a"}))
     assert [hit.id for hit in store.search_text("hello", {"kind": "note"}, limit=2)] == ["good", "next"]
     assert backend.calls[0] == ("text", {"$and": [{"kind": "note"}, {"workspace": "a"}]}, 2)
+
+
+def test_scoped_search_passes_object_type_and_rejects_unsupported_related_policy():
+    backend = Backend()
+    seen = []
+    class RelatedPolicy:
+        def evaluate(self, request):
+            seen.append(request.object_type)
+            return DataPolicyDecision(predicates=(DataPredicate("uid", DataPredicateOperator.RELATED_EXISTS,
+                DataRelatedExists("links", "object_uid", {"workspace_uid": "a"})),))
+    store = PolicySearchIndex(backend, "articles", policies=DataPolicyPipeline((RelatedPolicy(),)),
+                              object_type="example:article")
+    with pytest.raises(DataUnsupportedOperationError):
+        store.search_text("hello")
+    assert seen == ["example:article"]
+    assert backend.calls == []
 
 
 def test_policy_search_uses_and_closes_snapshot_after_filling_results():

@@ -36,6 +36,25 @@ class DataPredicateOperator(str, Enum):
     IN = "in"
     LIKE = "like"
     IS_NULL = "is_null"
+    RELATED_EXISTS = "related_exists"
+
+
+@dataclass(frozen=True)
+class DataRelatedExists:
+    """Match a related table row against a field of the target object."""
+
+    table: str
+    related_field: str
+    filters: Mapping[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if not isinstance(self.table, str) or not self.table:
+            raise ValueError("Related table name must be a nonempty string")
+        if not isinstance(self.related_field, str) or not self.related_field:
+            raise ValueError("Related field name must be a nonempty string")
+        if not isinstance(self.filters, Mapping) or any(not isinstance(key, str) or not key for key in self.filters):
+            raise ValueError("Related filters must have nonempty string field names")
+        object.__setattr__(self, "filters", MappingProxyType(dict(self.filters)))
 
 
 def like_regex_body(pattern: str) -> str:
@@ -118,6 +137,7 @@ class DataOperationRequest:
     context: DataOperationContext = field(default_factory=DataOperationContext)
     filters: tuple[DataPredicate, ...] = ()
     values: Mapping[str, Any] = field(default_factory=dict)
+    object_type: str | None = None
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "filters", tuple(self.filters))
@@ -131,6 +151,7 @@ class DataPolicyDecision:
     allowed: bool = True
     predicates: tuple[DataPredicate, ...] = ()
     reason: str | None = None
+    replaces_owner_scope: bool = False
 
 
 class DataOperationPolicy(Protocol):
@@ -166,13 +187,20 @@ class DataPolicyPipeline:
         self._policies.append(policy)
 
     def evaluate(self, operation: DataOperationRequest) -> tuple[DataPredicate, ...]:
+        return self.evaluate_decision(operation).predicates
+
+    def evaluate_decision(self, operation: DataOperationRequest) -> DataPolicyDecision:
+        """Combine mandatory predicates and explicit owner-scope authority."""
         predicates: list[DataPredicate] = []
+        replaces_owner_scope = False
         for policy in self._policies:
             decision = policy.evaluate(operation)
             if not isinstance(decision, DataPolicyDecision):
                 raise TypeError("Data policies must return DataPolicyDecision")
             if not isinstance(decision.allowed, bool):
                 raise TypeError("DataPolicyDecision.allowed must be a bool")
+            if not isinstance(decision.replaces_owner_scope, bool):
+                raise TypeError("DataPolicyDecision.replaces_owner_scope must be a bool")
             if not decision.allowed:
                 raise DataPolicyDeniedError(
                     decision.reason or f"Data operation '{operation.kind.value}' was denied"
@@ -181,7 +209,10 @@ class DataPolicyPipeline:
                 if not isinstance(predicate, DataPredicate):
                     raise TypeError("Policy predicates must be DataPredicate instances")
                 predicates.append(predicate)
-        return tuple(predicates)
+            if decision.replaces_owner_scope and not decision.predicates:
+                raise ValueError("Owner scope replacement requires a policy constraint")
+            replaces_owner_scope = replaces_owner_scope or decision.replaces_owner_scope
+        return DataPolicyDecision(predicates=tuple(predicates), replaces_owner_scope=replaces_owner_scope)
 
     def explain(self, operation: DataOperationRequest) -> dict[str, Any]:
         """Summarize effective constraints without exposing predicate values."""

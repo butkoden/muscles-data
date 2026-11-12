@@ -29,7 +29,9 @@ if TYPE_CHECKING:
         DataPolicyPipeline,
         DataPredicate,
         DataPredicateOperator,
+        DataRelatedExists,
     )
+    from .object_lifecycle import ObjectLifecycle, ObjectLifecycleEvent
     from .ports import (
         DocumentStorePort,
         EventConsumerPort,
@@ -78,6 +80,9 @@ __all__ = [
     "SqliteOperationJournal",
     "DataPredicate",
     "DataPredicateOperator",
+    "DataRelatedExists",
+    "ObjectLifecycle",
+    "ObjectLifecycleEvent",
     "DataResourceConfig",
     "DataResourceHandle",
     "DataRuntime",
@@ -155,9 +160,13 @@ def __getattr__(name: str):
         "DataPolicyPipeline",
         "DataPredicate",
         "DataPredicateOperator",
+        "DataRelatedExists",
     }:
         from . import policies
         return getattr(policies, name)
+    if name in {"ObjectLifecycle", "ObjectLifecycleEvent"}:
+        from . import object_lifecycle
+        return getattr(object_lifecycle, name)
     if name == "DataResourceConfig":
         from .models import DataResourceConfig
         return DataResourceConfig

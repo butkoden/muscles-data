@@ -54,6 +54,8 @@ def _matches(values, predicates):
     if not isinstance(values, Mapping):
         return False
     for item in predicates:
+        if item.operator is DataPredicateOperator.RELATED_EXISTS:
+            raise DataUnsupportedOperationError("Related-record conditions are not supported by search adapters")
         if item.field not in values:
             return False
         actual = values.get(item.field)
@@ -85,17 +87,21 @@ def _matches(values, predicates):
 
 
 class _PolicySearch:
-    def __init__(self, adapter, target: str, *, policies, context=None, max_scan=10000):
+    def __init__(self, adapter, target: str, *, policies, context=None, max_scan=10000, object_type=None):
         if not isinstance(target, str) or not target:
             raise ValueError("target must be a nonempty resource name")
         self.adapter, self.target, self.policies = adapter, target, policies
+        if object_type is not None and (not isinstance(object_type, str) or not object_type):
+            raise ValueError("object_type must be a nonempty string")
+        self.object_type = object_type
         self.context = context or DataOperationContext()
         if type(max_scan) is not int or max_scan <= 0:
             raise ValueError("max_scan must be a positive integer")
         self.max_scan = max_scan
 
     def _evaluate(self, kind, filters=(), values=None):
-        return self.policies.evaluate(DataOperationRequest(kind, self.target, self.context, filters, values or {}))
+        return self.policies.evaluate(DataOperationRequest(kind, self.target, self.context, filters, values or {},
+                                                           object_type=self.object_type))
 
     def _item_values(self, values):
         payload = dict(values.get("payload") or {})

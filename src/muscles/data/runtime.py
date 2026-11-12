@@ -141,13 +141,45 @@ class DataRuntime:
         policies: DataPolicyPipeline | None = None,
         migrations: MigrationRegistry | None = None,
     ) -> None:
+        from .object_lifecycle import ObjectLifecycle
+
         self.config = config
         self.catalog = catalog or DataAdapterCatalog.with_defaults()
         self.policies = policies or DataPolicyPipeline()
+        self.object_lifecycle = ObjectLifecycle()
+        self._object_types: dict[str, str] = {}
+        self._object_owner_fields: dict[str, str] = {}
         self.migrations = migrations if migrations is not None else MigrationRegistry()
         self._handles: dict[str, DataResourceHandle] = {}
         self._lock = threading.RLock()
         self._closed = False
+
+    def register_object_type(self, target: str, object_type: str, *, owner_field: str | None = None) -> None:
+        """Declare a stable object type for a data target."""
+        if not isinstance(target, str) or not target or not isinstance(object_type, str) or not object_type:
+            raise ValueError("Target and object type must be nonempty strings")
+        if owner_field is not None and (not isinstance(owner_field, str) or not owner_field):
+            raise ValueError("Owner field must be a nonempty string")
+        with self._lock:
+            existing = self._object_types.get(target)
+            if existing is not None and existing != object_type:
+                raise ValueError("Data target already has a different object type")
+            existing_owner = self._object_owner_fields.get(target)
+            if owner_field is not None and existing_owner is not None and owner_field != existing_owner:
+                raise ValueError("Data target already has a different owner field")
+            self._object_types[target] = object_type
+            if owner_field is not None:
+                self._object_owner_fields[target] = owner_field
+
+    def object_type_for_target(self, target: str) -> str | None:
+        with self._lock:
+            return self._object_types.get(target)
+
+    def registered_object_types(self) -> tuple[tuple[str, str, str | None], ...]:
+        """Describe declared targets for composition and data migration."""
+        with self._lock:
+            return tuple((target, kind, self._object_owner_fields.get(target))
+                         for target, kind in sorted(self._object_types.items()))
 
     def list_resources(self) -> list[dict[str, Any]]:
         return [

@@ -429,3 +429,17 @@ def test_package_public_exports():
     assert md.StreamPort
     assert md.SqlResourcePort
     assert DataPackage.namespace == "data"
+def test_registered_object_type_is_stable_and_idempotent():
+    from muscles.data.config import DataConfig
+    from muscles.data.runtime import DataRuntime
+    import pytest
+
+    runtime = DataRuntime(config=DataConfig.from_raw({"resources": {}}))
+    runtime.register_object_type("contacts_contacts", "contacts:contact")
+    runtime.register_object_type("contacts_contacts", "contacts:contact")
+    assert runtime.object_type_for_target("contacts_contacts") == "contacts:contact"
+    with pytest.raises(ValueError, match="different object type"):
+        runtime.register_object_type("contacts_contacts", "other:object")
+    assert runtime.object_type_for_target("contacts_contacts") == "contacts:contact"
+    runtime.close()
+
