@@ -65,6 +65,8 @@ the registry, backend-specific journals and operational limitations.
 
 ## Operation Policies
 
+Practical guide: [English](docs/data-policies.en.md) · [Русский](docs/data-policies.ru.md).
+
 The core defines a storage-neutral policy contract. It carries request-scoped
 identity and arbitrary typed-at-the-boundary attributes, describes operations
 and combines mandatory predicates without introducing concepts such as users,
